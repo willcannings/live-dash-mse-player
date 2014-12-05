@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MPD
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="urn:mpeg:dash:schema:mpd:2011"
+  xsi:schemaLocation="urn:mpeg:dash:schema:mpd:2011 http://standards.iso.org/ittf/PubliclyAvailableStandards/MPEG-DASH_schema_files/DASH-MPD.xsd"
+  type="dynamic"
+  minimumUpdatePeriod="PT30S"
+  availabilityStartTime="2014-12-03T04:42:34"
+  minBufferTime="PT24S"
+  suggestedPresentationDelay="PT24S"
+  timeShiftBufferDepth="PT2M0S"
+  profiles="urn:mpeg:dash:profile:isoff-live:2011"
+>
+  <Period start="PT0S" id="1">
+    <AdaptationSet mimeType="video/mp4" codecs="avc1.4D4020,mp4a.40.2" frameRate="50/1" segmentAlignment="true" subsegmentAlignment="true" startWithSAP="1" subsegmentStartsWithSAP="1" bitstreamSwitching="true">
+      <ContentComponent contentType="video" id="1"/>
+      <ContentComponent contentType="audio" id="2"/>
+      <SegmentTemplate timescale="90000" media="enc2$Time$.mp4" initialization="enc2.init">
+        <SegmentTimeline>
+          <S t="297000000" d="1080000" r="9"/>
+        </SegmentTimeline>
+      </SegmentTemplate>
+      <Representation id="1" width="1280" height="720" bandwidth="10000000">
+        <SubRepresentation contentComponent="1" bandwidth="10000000" codecs="avc1.4D4020"/>
+        <SubRepresentation contentComponent="2" bandwidth="192000" codecs="mp4a.40.2"/>
+      </Representation>
+    </AdaptationSet>
+  </Period>
+</MPD>

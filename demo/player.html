@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+	<head>
+		<script src="jquery/dist/jquery.min.js"></script>
+		<script src="player.js"></script>
+		<link href="http://fonts.googleapis.com/css?family=Source+Sans+Pro:200,300,400,600,700" rel="stylesheet" type="text/css">
+		<link href="css/style.css" rel="stylesheet" type="text/css">
+	</head>
+	<body>
+		<div id="bg"></div>
+		<header>
+			<div>
+				<h1>Enter a manifest URL to start playing</h1>
+				<input id="mpd-url" value="sample_manifest2.mpd"> <button id="load-mpd">Load</button>
+			</div>
+		</header>
+		<main>
+			<video id="stream"></video>
+		</main>
+		<script>
+			$('#load-mpd').click(function() {
+				alert(1);
+			})
+		</script>
+	</body>
+</html>

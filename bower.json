@@ -1,0 +1,11 @@
+{
+  "name": "live-dash-mse-player",
+  "version": "0.0.1",
+  "main": [
+    "src/player.js"
+  ],
+  "description": "Media Source Extensions based player for live dash streams",
+  "devDependencies": {
+    "jquery": "~2.1.1",
+  }
+}

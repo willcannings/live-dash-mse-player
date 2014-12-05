@@ -1,0 +1,106 @@
+@import "compass";
+@import "compass/reset";
+
+$base-colour: #FF9F1F;
+$border-radius: 3px;
+
+* {
+	@include box-sizing(border-box);
+}
+
+button {
+	background-color: $base-colour;
+	color: white;
+	border: none;
+	font-size: 14px;
+	font-weight: 200;
+	@include border-radius($border-radius);
+	height: 29px;
+	line-height: 20px;
+	padding: 0px 15px;
+	outline: none;
+
+	&:hover {
+		background-color: darken($base-colour, 5%);
+	}
+
+	&:active {
+		background-color: darken($base-colour, 15%);
+	}
+}
+
+html, body {
+	font-family: 'Source Sans Pro', Helvetica, sans-serif;
+	width: 100%;
+	height: 100%
+}
+
+
+body {
+	position: relative;
+
+	$bg-blur: 10px;
+	#bg {
+		background-image: url(/images/bg.jpg);
+		background-size: cover;
+		background-repeat: no-repeat;
+		@include filter(blur($bg-blur));
+		position: absolute;
+		top: -(2 * $bg-blur);
+		left: -(2 * $bg-blur);
+		bottom: -(2 * $bg-blur);
+		right: -(2 * $bg-blur);
+	}
+}
+
+header {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	bottom: 0px;
+	right: 0px;
+	background-color: rgba(0,0,0,0.5);
+	color: white;
+	text-align: center;
+
+	$header-height: 200px;
+	$header-width: 380px;
+
+	> div {
+		height: $header-height;
+		width: $header-width;
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		margin-top: -($header-height / 2);
+		margin-left: -($header-width / 2);
+
+		h1 {
+			font-size: 26px;
+			font-weight: 200;
+			margin-bottom: 20px;
+		}
+
+		> input {
+			background-color: white;
+			border: none;
+			outline: none;
+			font-size: 18px;
+			padding: 4px 10px;
+			margin-right: 10px;
+			height: 29px;
+			@include border-radius($border-radius);
+			width: 280px;
+		}
+
+		> button {
+			position: relative;
+			top: -2px;
+		}
+	}
+}
+
+
+main {
+	//background-color: #78949E;	
+}
