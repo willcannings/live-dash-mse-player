@@ -1,0 +1,55 @@
+@import "compass";
+@import "../_vars";
+
+header {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	bottom: 0px;
+	right: 0px;
+	background-color: rgba(0,0,0,0.5);
+	color: white;
+	text-align: center;
+
+	&.hidden {
+		display: none;
+	}
+
+	$header-height: 200px;
+	$header-width: 380px;
+
+	> div {
+		height: $header-height;
+		width: $header-width;
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		margin-top: -($header-height / 2);
+		margin-left: -($header-width / 2);
+
+		h1 {
+			font-size: 26px;
+			font-weight: 200;
+			margin-bottom: 20px;
+			text-shadow: 0px 1px 4px rgba(0,0,0,0.35);
+		}
+
+		> input {
+			background-color: white;
+			border: none;
+			outline: none;
+			font-size: 18px;
+			padding: 4px 6px;
+			margin-right: 10px;
+			height: 29px;
+			@include border-radius($border-radius);
+			width: 280px;
+			color: #333;
+		}
+
+		> button {
+			position: relative;
+			top: -2px;
+		}
+	}
+}

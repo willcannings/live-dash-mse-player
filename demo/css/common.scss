@@ -1,0 +1,27 @@
+@import "compass";
+@import "_vars";
+
+* {
+	@include box-sizing(border-box);
+}
+
+button {
+	background-color: $base-colour;
+	color: white;
+	border: none;
+	font-size: 14px;
+	font-weight: 200;
+	@include border-radius($border-radius);
+	height: 29px;
+	line-height: 20px;
+	padding: 0px 15px;
+	outline: none;
+
+	&:hover {
+		background-color: darken($base-colour, 5%);
+	}
+
+	&:active {
+		background-color: darken($base-colour, 15%);
+	}
+}

@@ -1,0 +1,15 @@
+@import "compass";
+@import "../_vars";
+
+main {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	bottom: 0px;
+	right: 0px;
+	opacity: 1.0;
+
+	&.hidden {
+		opacity: 0.0;
+	}
+}
