@@ -3,13 +3,36 @@
 // --------------------------------------------------
 // abstract model
 // --------------------------------------------------
+// scales used when parsing duration strings
+var SECONDS = 1000;             // xs:duration seconds
+var MINUTES = 60 * SECONDS;     // xs:duration minutes
+var HOURS   = 60 * MINUTES;     // xs:duration hours
+var DURATION_COMPONENTS = {
+    'S': SECONDS,
+    'M': MINUTES,
+    'H': HOURS
+};
+
 // attribute processors
 function date(val) {
-    return val;
+    return Date.parse(val);
 }
 
 function duration(val) {
-    return val;
+    if (val.slice(0, 2) != 'PT')
+        throw 'can only parse durations solely composed of time components';
+
+    // remove "PT" and match each component: count (H | M | S)
+    let components = val.slice(2).match(/\d+[HMS]/g);
+    let milliseconds = 0;
+
+    components.forEach((component) => {
+        let scale = DURATION_COMPONENTS[component.slice(-1)];
+        let count = parseInt(component.slice(0, -1), 10);
+        milliseconds += count * scale;
+    });
+
+    return milliseconds;
 }
 
 function bool(val) {
@@ -126,11 +149,11 @@ export class Period extends Model {
 export class AdaptationSet extends Model {
     setup() {
         this.attrs({
-            mimeType: str,
-            segmentAlignment: bool,
-            subsegmentAlignment: bool,
-            startWithSAP: integer,
-            subsegmentStartsWithSAP: integer
+            startWithSAP:            integer,
+            subsegmentStartsWithSAP: integer,
+            segmentAlignment:        bool,
+            subsegmentAlignment:     bool,
+            mimeType:                str
         });
 
         this.initAll(ContentComponent);
@@ -143,7 +166,7 @@ export class ContentComponent extends Model {
     setup() {
         this.attrs({
             contentType: str,
-            id: integer
+            id:          integer
         });
     }
 }
@@ -155,11 +178,11 @@ export class ContentComponent extends Model {
 export class SegmentTemplate extends Model {
     setup() {
         this.attrs({
-            timescale: integer,
-            media: str,
             initialization: str,
-            duration: integer,
-            startNumber: integer,
+            startNumber:    integer,
+            timescale:      integer,
+            duration:       integer,
+            media:          str
         });
 
         this.init(SegmentTimeline);
@@ -189,11 +212,11 @@ export class S extends Model {
 export class Representation extends Model {
     setup() {
         this.attrs({
-            id: integer,
-            width: integer,
-            height: integer,
-            bandwidth: integer,
-            codecs: str
+            id:         integer,
+            width:      integer,
+            height:     integer,
+            bandwidth:  integer,
+            codecs:     str
         });
 
         this.initAll(SubRepresentation);
@@ -205,8 +228,8 @@ export class SubRepresentation extends Model {
     setup() {
         this.attrs({
             contentComponent: integer,
-            bandwidth: integer,
-            codecs: str
+            bandwidth:        integer,
+            codecs:           str
         });
     }
 }
