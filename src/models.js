@@ -151,6 +151,7 @@ export class Period extends Model {
             duration:   duration
         });
 
+        this.init(SegmentTemplate);
         this.initAll(AdaptationSet);
     }
 }
@@ -208,12 +209,54 @@ export class ContentComponent extends Model {
 export class SegmentTemplate extends Model {
     setup() {
         this.attrs({
-            initialization: str,
-            startNumber:    integer,
-            timescale:      integer,
-            duration:       integer,
-            media:          str
+            bitstreamSwitching: str,
+            initialization:     str,
+            index:              str,
+            media:              str,
+            startNumber:        integer,
+            timescale:          integer,
+            duration:           integer
         });
+
+        // inherit attributes from SegmentTemplates in AdaptationSets and Periods
+        // NOTE: this means the call order to init is important - Period must init
+        // SegmentTemplate before AdaptationSet and so on.
+        if (this.parent instanceof Representation ||
+            this.parent instanceof AdaptationSet) {
+
+            let defaults = this.parent.parent.segmentTemplate;
+            let attrNames = ['bitstreamSwitching', 'initialization', 'index',
+                            'media', 'startNumber', 'timescale', 'duration'];
+
+            for (let name of attrNames)
+                this[name] = this[name] || defaults[name];
+        }
+
+        // initialise template strings in base SegmentTemplates - instances in
+        // Period and AdaptationSet are used only as defaults for base instances
+        if (this.parent instanceof Representation) {
+            let bitstreamSwitching  = new TemplateString('bitstreamSwitching', this);
+            let initialization      = new TemplateString('initialization', this);
+            this.index              = new TemplateString('index', this);
+            this.media              = new TemplateString('media', this);
+
+            // if any of templates are invalid, and this SegmentTemplate instance
+            // is a child of a Representation, the parent Representation is invalid
+            if (bitstreamSwitching.invalid ||
+                initialization.invalid ||
+                this.index.invalid ||
+                this.media.invalid) {
+
+                this.invalid = true;
+                if (this.parent instanceof Representation)
+                    this.parent.invalid = true;
+            }
+
+            // neither initialization nor bitstreamSwitching can include Time or
+            // Number identifiers, so it's safe to use their pre-processed state
+            this.bitstreamSwitching = bitstreamSwitching.processed;
+            this.initialization = initialization.processed;
+        }
 
         this.init(SegmentTimeline);
     }
@@ -268,5 +311,93 @@ export class SubRepresentation extends Model {
             bandwidth:        integer,
             codecs:           str
         });
+    }
+}
+
+
+
+// --------------------------------------------------
+// helpers
+// --------------------------------------------------
+// validate and process format strings following the specs in 5.3.9.4.4
+// Template-based Segment URL construction, Table 16.
+class TemplateString {
+    constructor(name, segmentTemplate) {
+        let parent = segmentTemplate.parent;
+        let format = segmentTemplate[name];
+
+        // not all format strings are mandatory
+        if (format == undefined) {
+            this.empty = true;
+            return;
+        }
+
+        // templates are inherited from SegmentTemplate instances in Periods and
+        // AdaptationSets. Only process the template if it belongs to an instance
+        // of a SegmentTemplate appearing in a Representation.
+        if (!(parent instanceof Representation))
+            return;
+        
+        // avoid processing invalid format strings. If the string is used for
+        // the media attribute, and the parent element is a Representation,
+        // the entire Representation is invalidated and is ignored.
+        if (this.formatIsInvalid(name, format, parent)) {
+            this.invalid = true;
+            return;
+        }
+
+        // pre-process the format string - '$$', '$RepresentationID$' and
+        // '$Bandwidth$' can be statically replaced
+        this.processed = format.replace('$$', '$');
+        this.processed = this.substitute('RepresentationID', parent.id, this.processed);
+        this.processed = this.substitute('Bandwidth', parent.bandwidth, this.processed);
+    }
+
+    format(number, time) {
+        if (this.empty)
+            return '';
+        let interim = this.processed.slice(0);
+        interim = this.substitute('Number', number, interim);
+        return this.substitute('Time', time, interim);
+    }
+
+    substitute(identifier, value, interim) {
+        let regex = `\\$${identifier}(\\%0(\\d+)d)?\\$`
+        let instances = interim.match(new RegExp(regex, 'g'));
+        if (!instances)
+            return interim;
+
+        for (let instance of instances) {
+            var [full, _, width] = instance.match(regex);
+            var val = value.toString();
+            
+            if (width != undefined) {
+                width = parseInt(width, 10);
+                if (val.length < width)
+                    val = "0".repeat(width - val.length) + val;
+            }
+
+            interim = interim.replace(full, val);
+        }
+        
+        return interim;
+    }
+
+    formatIsInvalid(name, format, parent) {
+        // format strings can be invalidated by:
+        // * unescaped '$' characters
+        // * '$Number$' or '$Time$' appearing in initialization and
+        //   bitstreamSwitching formats
+        // * '$RepresentationID$' followed by a width formatting tag
+        // * '$Time$' and '$Number$' appearing in the same string
+        // * dollar signs enclosing an invalid identifier
+        // * width formatting tags not of the format '%0[width]d'
+        // * '$Time$' appearing in a template without a timeline
+        if (name == 'initialization' || name == 'bitstreamSwitching')
+            if (format.includes('$Number$') || format.includes('$Time$'))
+                return true;
+
+        // TODO: unescaped, RepID followed by width, Time & Number,
+        // invalid identifiers, invalid widths, missing timeline
     }
 }
