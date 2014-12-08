@@ -120,6 +120,7 @@ export class Manifest extends Model {
     setup() {
         this.attrs({
             suggestedPresentationDelay: duration,
+            mediaPresentationDuration:  duration,
             timeShiftBufferDepth:       duration,
             minimumUpdatePeriod:        duration,
             minBufferTime:              duration,
@@ -131,13 +132,25 @@ export class Manifest extends Model {
         this.live    = (this.profiles.indexOf('profile:isoff-live') != -1);
         this.dynamic = (this.type == 'dynamic');
 
+        this.init(BaseURL);
         this.init(Period);
+    }
+}
+
+export class BaseURL extends Model {
+    setup() {
+        this.url = this.xml.textContent;
     }
 }
 
 export class Period extends Model {
     setup() {
-        this.attrs({ start: duration });
+        this.attrs({
+            id:         str,
+            start:      duration,
+            duration:   duration
+        });
+
         this.initAll(AdaptationSet);
     }
 }
@@ -149,16 +162,33 @@ export class Period extends Model {
 export class AdaptationSet extends Model {
     setup() {
         this.attrs({
-            startWithSAP:            integer,
-            subsegmentStartsWithSAP: integer,
-            segmentAlignment:        bool,
-            subsegmentAlignment:     bool,
-            mimeType:                str
+            startWithSAP:               integer,
+            subsegmentStartsWithSAP:    integer,
+            segmentAlignment:           bool,
+            subsegmentAlignment:        bool,
+
+            audioSamplingRate:          integer,
+            maxFrameRate:               integer,
+            maxWidth:                   integer,
+            maxHeight:                  integer,
+            par:                        str,
+            
+            mimeType:                   str,
+            codecs:                     str,
+            lang:                       str
         });
 
         this.initAll(ContentComponent);
         this.init(SegmentTemplate);
         this.initAll(Representation);
+    }
+
+    representationWithID(id) {
+        for (let rep of this.representations) {
+            if (rep.id == id)
+                return rep;
+        }
+        return undefined;
     }
 }
 
@@ -212,15 +242,22 @@ export class S extends Model {
 export class Representation extends Model {
     setup() {
         this.attrs({
-            id:         integer,
-            width:      integer,
-            height:     integer,
-            bandwidth:  integer,
-            codecs:     str
+            id:             integer,
+            startWithSAP:   integer,
+
+            frameRate:      integer,
+            bandwidth:      integer,
+            width:          integer,
+            height:         integer,
+            sar:            integer,
+            
+            mimeType:       str,
+            codecs:         str
         });
 
         this.initAll(SubRepresentation);
         this.init(SegmentTemplate);
+        this.init(BaseURL);
     }
 }
 
