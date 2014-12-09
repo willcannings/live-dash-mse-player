@@ -4,7 +4,7 @@
 // abstract model
 // --------------------------------------------------
 // scales used when parsing duration strings
-var SECONDS = 1000;             // xs:duration seconds
+var SECONDS = 1;                // xs:duration seconds
 var MINUTES = 60 * SECONDS;     // xs:duration minutes
 var HOURS   = 60 * MINUTES;     // xs:duration hours
 var DURATION_COMPONENTS = {
@@ -15,7 +15,7 @@ var DURATION_COMPONENTS = {
 
 // attribute processors
 function date(val) {
-    return Date.parse(val);
+    return Date.parse(val) / 1000; // treat dates as seconds
 }
 
 function duration(val) {
@@ -134,6 +134,17 @@ export class Manifest extends Model {
 
         this.init(BaseURL);
         this.init(Period);
+    }
+
+    base() {
+        if (!this._base) {
+            if (this.baseURL)
+                this._base = this.baseURL.url;
+            else
+                this._base = this.url.substring(0, this.url.lastIndexOf('/') + 1);
+        }
+        
+        return this._base;
     }
 }
 
@@ -301,6 +312,28 @@ export class Representation extends Model {
         this.initAll(SubRepresentation);
         this.init(SegmentTemplate);
         this.init(BaseURL);
+
+        // fill in the representation's SegmentTemplate with a copy of the
+        // template in AdaptationSet or Period if it doesn't exist
+        if (!this.segmentTemplate) {
+            let defaultTemplate = null;
+            if (this.parent.segmentTemplate)                            // AdaptationSet
+                defaultTemplate = this.parent.segmentTemplate;
+            else if (this.parent.parent.segmentTemplate)                // Period
+                defaultTemplate = this.parent.parent.segmentTemplate;
+
+            if (!defaultTemplate)
+                throw 'Representation must currently have a SegmentTemplate or one must appear in ancestry';
+            this.segmentTemplate = new SegmentTemplate(defaultTemplate.xml, this);
+        }
+    }
+
+    subRepresentationWithIndex(index) {
+        for (let sub of this.subRepresentations) {
+            if (sub.contentComponent == index)
+                return sub;
+        }
+        return undefined;
     }
 }
 

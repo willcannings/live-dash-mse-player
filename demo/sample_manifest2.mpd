@@ -11,6 +11,7 @@
   timeShiftBufferDepth="PT30M0S"
   profiles="urn:mpeg:dash:profile:isoff-live:2011"
 >
+  <BaseURL>http://24x7dash-i.akamaihd.net/dash/live/900080/elemental/</BaseURL>
   <Period start="PT0S" id="1">
     <AdaptationSet mimeType="video/mp4" frameRate="30/1" segmentAlignment="true" subsegmentAlignment="true" startWithSAP="1" subsegmentStartsWithSAP="1" bitstreamSwitching="true">
       <SegmentTemplate timescale="90000" duration="540000" startNumber="1416855648"/>
