@@ -5,10 +5,8 @@
     "src/player.js"
   ],
   "description": "Media Source Extensions based player for live dash streams",
-  "devDependencies": {
-    "jquery": "~2.1.1"
-  },
   "dependencies": {
+    "jquery": "~2.1.1",
     "uri.js": "~1.14.2"
   }
 }

@@ -1,5 +1,7 @@
 'use strict';
 
+var DEFAULT_MIN_BUFFER_TIME = 30 * 1000;
+
 // --------------------------------------------------
 // abstract model
 // --------------------------------------------------
@@ -137,6 +139,14 @@ export class Manifest extends Model {
         this.live    = (this.profiles.indexOf('profile:isoff-live') != -1);
         this.dynamic = (this.type == 'dynamic');
 
+        // these durations are required when calculating segment URLs
+        if (this.suggestedPresentationDelay == undefined)
+            this.suggestedPresentationDelay = 0;
+        if (this.availabilityStartTime == undefined)
+            this.availabilityStartTime = 0;
+        if (this.minBufferTime == undefined)
+            this.minBufferTime = DEFAULT_MIN_BUFFER_TIME;
+
         this.init(BaseURL);
         this.init(Period);
     }
@@ -273,6 +283,10 @@ export class SegmentTemplate extends Model {
                 if (this.parent instanceof Representation)
                     this.parent.invalid = true;
             }
+
+            // startNumber defaults to 0 - indexes are 0 based
+            if (this.startNumber == undefined)
+                this.startNumber = 0;
 
             // neither initialization nor bitstreamSwitching can include Time or
             // Number identifiers, so it's safe to use their pre-processed state

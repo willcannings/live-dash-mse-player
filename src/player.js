@@ -67,11 +67,12 @@ class Timeline {
             this.time += this.template.duration;
     }
 
-    segmentRequest() {
+    segment() {
         // TODO: use URI methods
         let url = this.player.currentManifest.base() +
                     this.template.media.format(this.number, this.time);
-        return new Segment(url);
+        return url;
+        //return new Segment(url);
     }
 
     codecs(component = null) {
@@ -111,7 +112,7 @@ class Source {
     }
 
     loadInitializationFile() {
-        console.log(this.ident, 'loading initialization file');
+        console.log(this.ident, 'loading initialization file', this.timeline.initializationURL);
         let source = this;
 
         this.getFile(this.timeline.initializationURL, function() {
@@ -126,9 +127,9 @@ class Source {
                         console.log(source.ident, 'loaded 3 segments');
                         source.player.element.play();
                     })
-                })*/
+                })
             })
-        });
+        });*/
     }
 
     loadFirstSegment() {
@@ -387,7 +388,7 @@ class Player {
             for (var i in period.adaptationSets) {
                 let adaptationSet = period.adaptationSets[i];
                 try {
-                    let source = new Source(this, adaptationSet, startTime, index);
+                    let source = new Source(this, adaptationSet, startTime, i);
                     this.sources.push(source);
                 } catch (e) {
                     console.log('exception creating source', e.stack, e);
