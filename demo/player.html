@@ -1,13 +1,6 @@
 <!doctype html>
 <html>
     <head>
-        <script src="jquery/dist/jquery.min.js"></script>
-        <script src="https://google.github.io/traceur-compiler/bin/traceur.js"></script>
-        <script src="https://google.github.io/traceur-compiler/src/bootstrap.js"></script>
-        <script>
-            traceur.options.experimental = true;
-        </script>
-
         <link href="http://fonts.googleapis.com/css?family=Source+Sans+Pro:200,300,400,600,700" rel="stylesheet" type="text/css">
         <link href="css/style.css" rel="stylesheet" type="text/css">
         <link href="css/spinner.css" rel="stylesheet" type="text/css">
@@ -27,16 +20,19 @@
                 <input id="mpd-url" value="/sample_manifest2.mpd"> <button id="load-mpd">Play</button>
             </div>
         </header>
-        <script type="module">
-            import Player from 'player';
 
+        <script src="jquery/dist/jquery.min.js"></script>
+        <script src="uri.js/src/URI.min.js"></script>
+        <script src="models.js"></script>
+        <script src="player.js"></script>
+        <script>
             $('#video-stream').on('player:loading', function() {
                 $('main').removeClass('hidden');
                 $('header').addClass('hidden');
             })
 
             $('#load-mpd').click(function() {
-                let player = new Player({
+                var player = new Player({
                     url: $('#mpd-url').val(),
                     element: $('#video-stream')
                 });

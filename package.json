@@ -5,9 +5,11 @@
     "del": "^1.1.0",
     "filed": "^0.1.0",
     "gulp": "^3.8.10",
+    "gulp-babel": "^4.0.0",
     "gulp-compass": "^2.0.3",
+    "gulp-concat": "^2.5.2",
     "gulp-load-plugins": "^0.7.1",
-    "gulp-traceur": "^0.14.1",
+    "gulp-sourcemaps": "^1.5.1",
     "gulp-useref": "^1.0.2"
   }
 }

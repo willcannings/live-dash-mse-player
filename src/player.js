@@ -1,7 +1,5 @@
 'use strict';
 
-import { Manifest } from 'models';
-
 // allow 20% of a segment's duration to download the next segment
 var DOWNLOAD_FUDGE = 0.8;
 
@@ -70,6 +68,7 @@ class Timeline {
     }
 
     segmentRequest() {
+        // TODO: use URI methods
         let url = this.player.currentManifest.base() +
                     this.template.media.format(this.number, this.time);
         return new Segment(url);
@@ -120,14 +119,14 @@ class Source {
             source.loadFirstSegment();
         });
 
-                source.timeline.tick();
+                /*source.timeline.tick();
                 source.getFile(source.timeline.mediaURL(), function() {
                     source.timeline.tick();
                     source.getFile(source.timeline.mediaURL(), function() {
                         console.log(source.ident, 'loaded 3 segments');
                         source.player.element.play();
                     })
-                })
+                })*/
             })
         });
     }
@@ -240,7 +239,7 @@ var PLAYER_STATE_DESCRIPTIONS = [
     'stalled'
 ];
 
-export default class {
+class Player {
     constructor(opts) {
         // merge default and supplied options
         this.options = jQuery.extend({
@@ -252,7 +251,6 @@ export default class {
 
         this.element = this.options.element[0];
         this.mediaSource = new MediaSource();
-        window.ms = this.mediaSource;
         this.element.pause();
         this.element.src = URL.createObjectURL(this.mediaSource);
         console.log('created media source');
@@ -293,7 +291,7 @@ export default class {
             if (player.playbackTimer)
                 clearTimeout(player.playbackTimer);
             player.playbackTimer = setTimeout(function() {
-                console.error('timeupdate not triggered for 5s, stopped?');
+                console.error('timeupdate not triggered for 5s, playback stopped?');
                 clearInterval(player.updater);
                 player.updater = null;
             }, 5 * 1000);
@@ -302,13 +300,14 @@ export default class {
         // show buffer info every second while playing
         function createUpdater() {
             player.updater = setInterval(function() {
-                try {
-                    let current = player.element.currentTime;
+                let current = player.element.currentTime;
+
+                if (player.element.buffered.length > 0) {
                     let last = player.element.buffered.end(0);
                     let remaining = last - current;
                     console.log('* time:', current, ' buffered:', last, 'remaining:', remaining);
-                } catch (e) {
-                    //console.log('could not update time:', e);
+                } else {
+                    console.log('* time:', current, ' buffered: nil');
                 }
             }, 2 * 1000);
         }
@@ -352,14 +351,14 @@ export default class {
     reloadManifest() {
         console.log('reloading manifest from', this.options.url);
         let player = this;
+        let url = this.options.url;
 
         jQuery.ajax({
-            url: this.options.url,
+            url: url,
             dataType: 'xml'
         }).done(function(xml) {
             let manifestEl = xml.getElementsByTagName('MPD')[0];
-            let manifest = new Manifest(manifestEl);
-            manifest.url = player.options.url;
+            let manifest = new Manifest(manifestEl, url);
             console.log('loaded manifest', manifest);
 
             player.manifests.push(manifest);
@@ -391,7 +390,7 @@ export default class {
                     let source = new Source(this, adaptationSet, startTime, index);
                     this.sources.push(source);
                 } catch (e) {
-                    console.log('exception creating source', e);
+                    console.log('exception creating source', e.stack, e);
                 }
             }
         }
