@@ -377,7 +377,10 @@ class Player {
 
         if (this.sources.length == 0) {
             // load segments from current time - presentation delay
-            let startTime = (Date.now() / 1000) - this.currentManifest.suggestedPresentationDelay;
+            if (this.currentManifest.live && this.currentManifest.availabilityStartTime > 0)
+               var startTime = (Date.now() / 1000) - this.currentManifest.suggestedPresentationDelay;
+            else
+                var startTime = 0;
             console.log('first load, loading segments from', startTime);
 
             // set the video width and height from the first adaptationSet

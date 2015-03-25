@@ -250,6 +250,9 @@ export class SegmentTemplate extends Model {
             duration:           integer
         });
 
+        if (this.timescale == undefined)
+            this.timescale = 1;
+
         // inherit attributes from SegmentTemplates in AdaptationSets and Periods
         // NOTE: this means the call order to init is important - Period must init
         // SegmentTemplate before AdaptationSet and so on.
@@ -284,9 +287,9 @@ export class SegmentTemplate extends Model {
                     this.parent.invalid = true;
             }
 
-            // startNumber defaults to 0 - indexes are 0 based
+            // startNumber defaults to 1
             if (this.startNumber == undefined)
-                this.startNumber = 0;
+                this.startNumber = 1;
 
             // neither initialization nor bitstreamSwitching can include Time or
             // Number identifiers, so it's safe to use their pre-processed state
