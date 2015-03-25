@@ -1,7 +1,5 @@
 'use strict';
 
-import { Manifest } from 'models';
-
 // allow 20% of a segment's duration to download the next segment
 var DOWNLOAD_FUDGE = 0.8;
 
@@ -151,7 +149,7 @@ class Source {
 // --------------------------------------------------
 // player
 // --------------------------------------------------
-export default class {
+class Player {
     constructor(opts) {
         // merge default and supplied options
         this.options = jQuery.extend({
