@@ -212,9 +212,14 @@ class Player {
         function createUpdater() {
             player.updater = setInterval(function() {
                 let current = player.element.currentTime;
-                let last = player.element.buffered.end(0);
-                let remaining = last - current;
-                console.log('* time:', current, ' buffered:', last, 'remaining:', remaining);
+
+                if (player.element.buffered.length > 0) {
+                    let last = player.element.buffered.end(0);
+                    let remaining = last - current;
+                    console.log('* time:', current, ' buffered:', last, 'remaining:', remaining);
+                } else {
+                    console.log('* time:', current, ' buffered: nil');
+                }
             }, 2 * 1000);
         }
         
@@ -236,14 +241,14 @@ class Player {
     reloadManifest() {
         console.log('reloading manifest from', this.options.url);
         let player = this;
+        var url = this.options.url;
 
         jQuery.ajax({
-            url: this.options.url,
+            url: url,
             dataType: 'xml'
         }).done(function(xml) {
             let manifestEl = xml.getElementsByTagName('MPD')[0];
-            let manifest = new Manifest(manifestEl);
-            manifest.url = player.options.url;
+            let manifest = new Manifest(manifestEl, url);
             console.log('loaded manifest', manifest);
 
             player.manifests.push(manifest);
@@ -272,7 +277,7 @@ class Player {
                     let source = new Source(this, adaptationSet, now, index);
                     this.sources.push(source);
                 } catch (e) {
-                    console.log('exception creating source', e);
+                    console.log('exception creating source', e.stack, e);
                 }
                 index += 1;
             }

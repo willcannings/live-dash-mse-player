@@ -117,6 +117,11 @@ class Model {
 // models
 // --------------------------------------------------
 export class Manifest extends Model {
+    constructor(xml, url) {
+        this.url = url;
+        super(xml);
+    }
+
     setup() {
         this.attrs({
             suggestedPresentationDelay: duration,
@@ -139,7 +144,7 @@ export class Manifest extends Model {
     base() {
         if (!this._base) {
             if (this.baseURL)
-                this._base = this.baseURL.url;
+                this._base = this.baseURL.absoluteTo(this.url);
             else
                 this._base = this.url.substring(0, this.url.lastIndexOf('/') + 1);
         }
@@ -151,6 +156,12 @@ export class Manifest extends Model {
 export class BaseURL extends Model {
     setup() {
         this.url = this.xml.textContent;
+    }
+
+    absoluteTo(manifestURL) {
+        let manifest = URI(manifestURL);
+        let base = URI(this.url);
+        return base.absoluteTo(manifest).toString();
     }
 }
 
@@ -296,7 +307,7 @@ export class S extends Model {
 export class Representation extends Model {
     setup() {
         this.attrs({
-            id:             integer,
+            id:             str,
             startWithSAP:   integer,
 
             frameRate:      integer,
