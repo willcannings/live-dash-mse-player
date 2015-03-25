@@ -9,13 +9,21 @@ var DOWNLOAD_FUDGE = 0.8;
 // --------------------------------------------------
 // segment and scheduling
 // --------------------------------------------------
-class Segment {
-    constructor(url, availabilityStartTime) {
-        this.availabilityStartTime = availabilityStartTime;
-        this.url = url;
-    }
+var SEGMENT_STATES = {
+    PENDING: 0,
+    DOWNLOADING: 1,
+    DOWNLOADED: 2
+};
 
-    isAvailable() {
+class Segment {
+    constructor(url, time, number, availabilityStartTime) {
+        this.availabilityStartTime = availabilityStartTime;
+        this.number = number;
+        this.time = time;
+        this.url = url;
+
+        this.state = SEGMENT_STATES.PENDING;
+        this.data = null;
     }
 }
 
@@ -50,8 +58,6 @@ class Timeline {
             this.number = rounded + this.template.startNumber;
             console.log('Timeline - time:', this.time, 'number:', this.number, 'original number:', rounded);
         }
-
-
     }
 
     tick() {
@@ -63,9 +69,10 @@ class Timeline {
             this.time += this.template.duration;
     }
 
-    mediaURL() {
-        return this.player.currentManifest.base() +
-                 this.template.media.format(this.number, this.time);
+    segmentRequest() {
+        let url = this.player.currentManifest.base() +
+                    this.template.media.format(this.number, this.time);
+        return new Segment(url);
     }
 
     codecs(component = null) {
@@ -87,6 +94,10 @@ class Source {
 
         this.ident = `Source ${index} (${type}):`;
         console.log(this.ident, 'created; added buffer and created timeline', this.timeline);
+
+        // start the queue with the first segment - this is needed to know
+        // the starting currentTime playback position
+        this.queue = [this.timeline.segment()];
         
         this.then = null;
         let source = this;
@@ -97,20 +108,18 @@ class Source {
             source.then = null;
         });
 
-        this.initialise();
+        this.loadInitializationFile();
     }
 
-    initialise() {
-        console.log(this.ident, 'start initialise');
+    loadInitializationFile() {
+        console.log(this.ident, 'loading initialization file');
         let source = this;
 
         this.getFile(this.timeline.initializationURL, function() {
-            console.log(this.ident, 'done initialise, starting first segment request');
-            source.getFile(source.timeline.mediaURL(), function() {
-                console.log(source.ident, 'loaded first segment, seeking and starting regular updates');
-                try {
-                    source.player.element.currentTime = source.player.element.buffered.start(0);
-                } catch (e) {}
+            console.log(this.ident, 'loaded initialization file, loading first segment');
+            source.loadFirstSegment();
+        });
+
                 source.timeline.tick();
                 source.getFile(source.timeline.mediaURL(), function() {
                     source.timeline.tick();
@@ -121,6 +130,20 @@ class Source {
                 })
             })
         });
+    }
+
+    loadFirstSegment() {
+        let source = this;
+
+        this.getFile(this.queue.shift(), function() {
+            console.log(source.ident, 'loaded first segment, now buffering minBufferTime segments');
+            source.player.loadedFirstSegment();
+        });
+    }
+
+    loadSegment(segment) {
+        segment.downloading = true;
+        this.getFile(segment.url);
     }
 
     getFile(url, then) {
@@ -148,9 +171,75 @@ class Source {
 }
 
 
+class Manager {
+    constructor(player, element) {
+        this.player = player;
+        this.element = element;
+
+        var manager = this;
+        this.interval = setInterval(function() {
+            manager.run();
+        }, 100);
+    }
+
+    run() {
+        let now = Date.now();
+
+        // start downloading newly available segments
+        for (let source of this.player.sources) {
+            // for timelines without an end (i.e without duration and r
+            // attributes), generate new segments when needed
+            source.timeline.update();
+
+            for (let segment of source.timeline.segments) {
+                if (segment.availabilityStartTime <= now &&
+                    segment.state == SEGMENT_STATES.PENDING)
+                {
+                    segment.state = SEGMENT_STATES.DOWNLOADING;
+                    downloader.get(segment.url, function(data) {
+                        segment.state = SEGMENT_STATES.DOWNLOADED;
+                        segment.data = data;
+                        source.add(segment);
+                    });
+                }
+
+            }
+        }
+    }
+}
+
+class Downloader {
+    constructor() {
+        this.latencies = [];
+        this.drifts = [];
+        this.speeds = [];
+    }
+}
+
+
 // --------------------------------------------------
 // player
 // --------------------------------------------------
+var PLAYER_STATES = {
+    UNINITIALISED: 0,
+    LOADED_FIRST_MPD: 1,
+    STARTED_FIRST_BUFFER: 2,
+    ALL_FIRST_SEGMENTS_AVAILABLE: 3,
+    PD_BUFFER_FILLED: 4,
+    PLAYING: 5,
+    STALLED: 6
+};
+
+var PLAYER_STATE_DESCRIPTIONS = [
+    'uninitialised',
+    'loaded first mpd',
+    'started first buffer',
+    'all first segments available',
+    'presentation delay buffer filled',
+    'playing',
+    'stalled'
+];
+
 export default class {
     constructor(opts) {
         // merge default and supplied options
@@ -213,10 +302,14 @@ export default class {
         // show buffer info every second while playing
         function createUpdater() {
             player.updater = setInterval(function() {
-                let current = player.element.currentTime;
-                let last = player.element.buffered.end(0);
-                let remaining = last - current;
-                console.log('* time:', current, ' buffered:', last, 'remaining:', remaining);
+                try {
+                    let current = player.element.currentTime;
+                    let last = player.element.buffered.end(0);
+                    let remaining = last - current;
+                    console.log('* time:', current, ' buffered:', last, 'remaining:', remaining);
+                } catch (e) {
+                    //console.log('could not update time:', e);
+                }
             }, 2 * 1000);
         }
         
@@ -230,6 +323,27 @@ export default class {
 
     emit(event) {
         jQuery(this.element).trigger('player:' + event);
+    }
+
+    // ---------------------------
+    // buffering
+    // ---------------------------
+    loadedFirstSegment() {
+        // each segment has an offset time that will generally be > 0 in
+        // a live stream. once all tracks have loaded their first segment,
+        // set the video's current playback time to the offset of the first
+        // segments so playback can start.
+        for (var i = 0; i < this.sources.length; i++)
+            if (this.sources[i].buffered.length == 0)
+                return;
+
+        let startTime = this.element.buffered.start(0);
+        this.element.currentTime = startTime;
+        console.log('playback starts from', startTime);
+    }
+
+    startBuffering() {
+
     }
 
     // ---------------------------
@@ -260,23 +374,25 @@ export default class {
     reloadSources() {
         console.log('reloading sources');
         let period = this.currentManifest.period;
-        let manifest = this.currentManifest;
-        let now = Date.now() / 1000;
 
         if (this.sources.length == 0) {
-            console.log('first load');
+            // load segments from current time - presentation delay
+            let startTime = (Date.now() / 1000) - this.currentManifest.suggestedPresentationDelay;
+            console.log('first load, loading segments from', startTime);
+
+            // set the video width and height from the first adaptationSet
+            // FIXME: this assume AS[0] is a video track
             this.element.width = period.adaptationSets[0].representations[0].width;
             this.element.height = period.adaptationSets[0].representations[0].height;
-            let index = 0;
 
-            for (let adaptationSet of period.adaptationSets) {
+            for (var i in period.adaptationSets) {
+                let adaptationSet = period.adaptationSets[i];
                 try {
-                    let source = new Source(this, adaptationSet, now, index);
+                    let source = new Source(this, adaptationSet, startTime, index);
                     this.sources.push(source);
                 } catch (e) {
                     console.log('exception creating source', e);
                 }
-                index += 1;
             }
         }
 
