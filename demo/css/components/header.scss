@@ -17,6 +17,8 @@ header {
 
 	$header-height: 200px;
 	$header-width: 380px;
+	$widget-height: 30px;
+	$widget-spacing: 10px;
 
 	> div {
 		height: $header-height;
@@ -34,20 +36,33 @@ header {
 			text-shadow: 0px 1px 4px rgba(0,0,0,0.35);
 		}
 
-		> input {
+		select {
+			margin-right: $widget-spacing / 2;
+			width: 17px;
+			height: $widget-height;
+			background-color: #eee;
+			outline: none;
+			border: none;
+			position: relative;
+			top: -2px;
+		}
+
+		input {
 			background-color: white;
 			border: none;
 			outline: none;
 			font-size: 18px;
 			padding: 4px 6px;
-			margin-right: 10px;
+			margin-right: $widget-spacing;
 			height: 29px;
 			@include border-radius($border-radius);
-			width: 280px;
+			width: 265px;
 			color: #333;
+			height: $widget-height;
 		}
 
-		> button {
+		button {
+			height: $widget-height;
 			position: relative;
 			top: -2px;
 		}

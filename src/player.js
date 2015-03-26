@@ -77,7 +77,7 @@ class Timeline {
 
     codecs(component = null) {
         if (this.representation.subRepresentations.length > 0)
-            return this.representation.subRepresentationWithIndex(component).codecs;
+            return this.representation.subRepresentationWith('contentComponent', component).codecs;
         else
             return this.representation.codecs;
     }

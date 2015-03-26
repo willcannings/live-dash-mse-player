@@ -17,7 +17,13 @@
         <header>
             <div>
                 <h1>Enter a manifest URL to start playing</h1>
-                <input id="mpd-url" value="/sample_manifest2.mpd"> <button id="load-mpd">Play</button>
+                <select id="default-mpd-urls">
+                    <option value="http://rdmedia.bbc.co.uk/dash/ondemand/bbb/2/client_manifest-v1-a2.mpd">BBC Big Buck Bunny (static, fixed length)</option>
+                    <option value="http://demo.unified-streaming.com/video/caminandes/caminandes.ism/caminandes.mpd">Unified Streaming Caminandes (static, fixed length)</option>
+                    <option value="http://54.201.151.65/livesim/tfdt_32/testpic_2s/Manifest.mpd" selected>MobiTV Colour Bars (dynamic, live)</option>
+                    <option value="http://live.unified-streaming.com/loop/loop.isml/loop.mpd?format=mp4&session_id=25020">Unified Streaming Loop (dynamic, live)</option>
+                </select>
+                <input id="mpd-url" value="http://54.201.151.65/livesim/tfdt_32/testpic_2s/Manifest.mpd"> <button id="load-mpd">Play</button>
             </div>
         </header>
 
@@ -26,6 +32,10 @@
         <script src="models.js"></script>
         <script src="player.js"></script>
         <script>
+            $('#default-mpd-urls').change(function() {
+                $('#mpd-url').val($(this).val());
+            });
+
             $('#video-stream').on('player:loading', function() {
                 $('main').removeClass('hidden');
                 $('header').addClass('hidden');

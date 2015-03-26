@@ -45,20 +45,62 @@ function integer(val) {
     return parseInt(val, 10);
 }
 
+function dbl(val) {
+    return parseFloat(val);
+}
+
 function str(val) {
     return val;
 }
 
 class Model {
-    constructor(xml, parent = null) {
-        this.attributes = xml.attributes;
-        this.parent = parent;
-        this.xml = xml;
-        this.setup();
+    // construct models by supplying base XML to be used in
+    // an overriden setup method, or another model to clone
+    constructor(obj, parent = null) {
+        // cloning
+        if (obj instanceof Model) {
+            let clone = obj;
+            this.attributeDefinitions = clone.attributeDefinitions;
+            this.elementAttributes = clone.elementAttributes;
+            this.attributes = clone.attributes;
+            this.parent = parent;
+            this.xml = clone.xml;
+
+            // attribute values
+            for (name in clone.attributeDefinitions)
+                this[name] = clone[name];
+
+            // child elements
+            for (let name of clone.elementAttributes)
+                this[name] = clone[name];
+
+            // allow the model to assign further attributes
+            obj.clone(this);
+
+        // new from xml
+        } else {
+            let xml = obj;
+            this.attributeDefinitions = {};
+            this.elementAttributes = [];
+            this.attributes = xml.attributes;
+            this.parent = parent;
+            this.xml = xml;
+            this.setup();
+        }
+
+        // setup is only called on models instantiated from xml,
+        // postSetup is called on these models and clones
+        this.postSetup();
     }
 
     setup() {
         throw 'setup not overriden';
+    }
+
+    postSetup() {
+    }
+
+    clone(other) {
     }
 
     // attributes
@@ -70,7 +112,10 @@ class Model {
         }
     }
 
-    attrs(pairs) {
+    attrs(pairs, otherPairs) {
+        // track attributes and types defined on models
+        jQuery.extend(this.attributeDefinitions, pairs);
+
         for (name in pairs) {
             let val = this.attr(name);
             let processor = pairs[name];
@@ -78,7 +123,26 @@ class Model {
             if (processor && val != undefined)
                 val = processor(val);
             this[name] = val;
-        }        
+        }
+
+        // some models share common attributes
+        if (otherPairs)
+            this.attrs(otherPairs);
+    }
+
+    inheritFrom(type, attr, attrNames) {
+        let ancestorObj = this.ancestor(type);
+        if (ancestorObj == undefined)
+            return;
+
+        let obj = ancestorObj[attr];
+        if (obj == undefined)
+            return;
+
+        for (let name of attrNames) {
+            if (this[name] == undefined)
+                this[name] = obj[name];
+        }
     }
 
     // elements
@@ -88,6 +152,7 @@ class Model {
 
     init(type) {
         let varName = this.titleCase(type);
+        this.elementAttributes.push(varName);
         let xml = this.xml.getElementsByTagName(type.name)[0];
 
         if (xml == undefined) {
@@ -98,9 +163,12 @@ class Model {
     }
 
     initAll(type) {
-        let varName = this.titleCase(type) + 's';
-        let elements = this.xml.getElementsByTagName(type.name);
+        let singularTypeName = this.titleCase(type);
+        let varName = singularTypeName + 's';
+        this.elementAttributes.push(varName);
 
+        // load child elements
+        let elements = this.xml.getElementsByTagName(type.name);
         if (elements.length == 0) {
             this[varName] = []
         } else {
@@ -110,6 +178,66 @@ class Model {
                 return new type(xml, parent);
             });
         }
+
+        // curried versions of accessor functions
+        this[singularTypeName + 'WithLowest'] = function(attr) {
+            return this.getLowest(this[varName], attr);
+        }
+
+        this[singularTypeName + 'WithHighest'] = function(attr) {
+            return this.getHighest(this[varName], attr);
+        }
+
+        this[singularTypeName + 'With'] = function(attr, val) {
+            return this.getWith(this[varName], attr, val);
+        }
+    }
+
+    // child accessors
+    getWith(objects, attr, val) {
+        for (let obj of objects) {
+            if (obj[attr] == val)
+                return obj;
+        }
+        return undefined;
+    }
+
+    getLowest(objects, attr) {
+        let minObj = objects[0];
+
+        for (var i = 1; i < objects.length; i++) {
+            let obj = objects[i];
+            let objVal = obj[attr];
+            if ((objVal != undefined) && (objVal < minObj[attr]))
+                minObj = obj;
+        }
+
+        return minObj;
+    }
+
+    getHighest(objects, attr) {
+        let maxObj = objects[0];
+
+        for (var i = 1; i < objects.length; i++) {
+            let obj = objects[i];
+            let objVal = obj[attr];
+            if ((objVal != undefined) && (objVal > maxObj[attr]))
+                maxObj = obj;
+        }
+
+        return maxObj;
+    }
+
+    // ancestors
+    ancestor(type) {
+        let obj = this.parent;
+        while ((obj != undefined) && !(obj instanceof type))
+            obj = obj.parent;
+
+        if ((obj == undefined) || !(obj instanceof type))
+            return undefined;
+        else
+            return obj;
     }
 }
 
@@ -192,44 +320,99 @@ export class Period extends Model {
 // ---------------------------
 // adaptation sets
 // ---------------------------
+var commonAttributes = {
+        startWithSAP:               integer,
+        maximumSAPPeriod:           dbl,
+        codingDependency:           bool,
+
+        audioSamplingRate:          str,
+        maxPlayoutRate:             dbl,
+        frameRate:                  str,
+        scanType:                   str,
+        width:                      integer,
+        height:                     integer,
+        sar:                        str,
+
+        segmentProfiles:            str,
+        profiles:                   str,
+        mimeType:                   str,
+        codecs:                     str
+};
+
 export class AdaptationSet extends Model {
     setup() {
-        this.attrs({
-            startWithSAP:               integer,
+        this.attrs(commonAttributes, {
             subsegmentStartsWithSAP:    integer,
             segmentAlignment:           bool,
             subsegmentAlignment:        bool,
 
-            audioSamplingRate:          integer,
             maxFrameRate:               integer,
             maxWidth:                   integer,
             maxHeight:                  integer,
             par:                        str,
-            
-            mimeType:                   str,
-            codecs:                     str,
             lang:                       str
         });
 
         this.initAll(ContentComponent);
         this.init(SegmentTemplate);
         this.initAll(Representation);
-    }
-
-    representationWithID(id) {
-        for (let rep of this.representations) {
-            if (rep.id == id)
-                return rep;
-        }
-        return undefined;
-    }
+    }    
 }
 
 export class ContentComponent extends Model {
     setup() {
         this.attrs({
             contentType: str,
-            id:          integer
+            lang:        str,
+            par:         str,
+            id:          str
+        });
+    }
+}
+
+export class Representation extends Model {
+    setup() {
+        this.attrs(commonAttributes, {
+            id:                     str,
+            bandwidth:              integer,
+            qualityRanking:         integer,
+            dependencyId:           str,
+            mediaStreamStructureId: str
+        });
+
+        // TODO: SegmentBase, SegmentList
+        this.initAll(SubRepresentation);
+        this.init(SegmentTemplate);
+        this.init(BaseURL);
+
+        // fill in the representation's SegmentTemplate with a copy of the
+        // template in AdaptationSet or Period if it doesn't exist
+        if (!this.segmentTemplate) {
+            let defaultTemplate = null;
+            
+            let adaptationSet = this.ancestor(AdaptationSet);
+            if (adaptationSet && adaptationSet.segmentTemplate) {
+                defaultTemplate = adaptationSet.segmentTemplate;
+            } else {
+                let period = this.ancestor(Period);
+                if (period && period.segmentTemplate)
+                    defaultTemplate = period.segmentTemplate;
+            }
+
+            if (!defaultTemplate)
+                throw 'Representation must currently have a SegmentTemplate or one must appear in ancestry';
+            this.segmentTemplate = new SegmentTemplate(defaultTemplate, this);
+        }
+    }
+}
+
+export class SubRepresentation extends Model {
+    setup() {
+        this.attrs(commonAttributes, {
+            level:            integer,
+            bandwidth:        integer,
+            dependencyLevel:  str,          // TODO: parse into list of SubRepr
+            contentComponent: str
         });
     }
 }
@@ -253,20 +436,21 @@ export class SegmentTemplate extends Model {
         if (this.timescale == undefined)
             this.timescale = 1;
 
-        // inherit attributes from SegmentTemplates in AdaptationSets and Periods
+        if (this.startNumber == undefined)
+            this.startNumber = 1;
+
+        this.init(SegmentTimeline);
+
+        // inherit attributes from SegmentTemplates in Periods and AdaptationSets
         // NOTE: this means the call order to init is important - Period must init
         // SegmentTemplate before AdaptationSet and so on.
-        if (this.parent instanceof Representation ||
-            this.parent instanceof AdaptationSet) {
+        let attrNames = ['bitstreamSwitching', 'initialization', 'index',
+                        'media', 'startNumber', 'timescale', 'duration'];
+        this.inheritFrom(AdaptationSet, 'segmentTemplate', attrNames);
+        this.inheritFrom(Period, 'segmentTemplate', attrNames);
+    }
 
-            let defaults = this.parent.parent.segmentTemplate;
-            let attrNames = ['bitstreamSwitching', 'initialization', 'index',
-                            'media', 'startNumber', 'timescale', 'duration'];
-
-            for (let name of attrNames)
-                this[name] = this[name] || defaults[name];
-        }
-
+    postSetup() {
         // initialise template strings in base SegmentTemplates - instances in
         // Period and AdaptationSet are used only as defaults for base instances
         if (this.parent instanceof Representation) {
@@ -287,17 +471,18 @@ export class SegmentTemplate extends Model {
                     this.parent.invalid = true;
             }
 
-            // startNumber defaults to 1
-            if (this.startNumber == undefined)
-                this.startNumber = 1;
-
             // neither initialization nor bitstreamSwitching can include Time or
             // Number identifiers, so it's safe to use their pre-processed state
             this.bitstreamSwitching = bitstreamSwitching.processed;
             this.initialization = initialization.processed;
         }
+    }
 
-        this.init(SegmentTimeline);
+    clone(other) {
+        other.bitstreamSwitching = this.bitstreamSwitching;
+        other.initialization = this.initialization;
+        other.index = this.index;
+        other.media = this.media;
     }
 }
 
@@ -310,71 +495,12 @@ export class SegmentTimeline extends Model {
 export class S extends Model {
     setup() {
         this.attrs({
-            t: integer,
-            d: integer,
-            r: integer
+            t: integer,     // time
+            d: integer,     // duration
+            r: integer      // num repeats
         });
     }
 }
-
-
-// ---------------------------
-// representations
-// ---------------------------
-export class Representation extends Model {
-    setup() {
-        this.attrs({
-            id:             str,
-            startWithSAP:   integer,
-
-            frameRate:      integer,
-            bandwidth:      integer,
-            width:          integer,
-            height:         integer,
-            sar:            integer,
-            
-            mimeType:       str,
-            codecs:         str
-        });
-
-        this.initAll(SubRepresentation);
-        this.init(SegmentTemplate);
-        this.init(BaseURL);
-
-        // fill in the representation's SegmentTemplate with a copy of the
-        // template in AdaptationSet or Period if it doesn't exist
-        if (!this.segmentTemplate) {
-            let defaultTemplate = null;
-            if (this.parent.segmentTemplate)                            // AdaptationSet
-                defaultTemplate = this.parent.segmentTemplate;
-            else if (this.parent.parent.segmentTemplate)                // Period
-                defaultTemplate = this.parent.parent.segmentTemplate;
-
-            if (!defaultTemplate)
-                throw 'Representation must currently have a SegmentTemplate or one must appear in ancestry';
-            this.segmentTemplate = new SegmentTemplate(defaultTemplate.xml, this);
-        }
-    }
-
-    subRepresentationWithIndex(index) {
-        for (let sub of this.subRepresentations) {
-            if (sub.contentComponent == index)
-                return sub;
-        }
-        return undefined;
-    }
-}
-
-export class SubRepresentation extends Model {
-    setup() {
-        this.attrs({
-            contentComponent: integer,
-            bandwidth:        integer,
-            codecs:           str
-        });
-    }
-}
-
 
 
 // --------------------------------------------------
