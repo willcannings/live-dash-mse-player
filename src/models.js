@@ -153,7 +153,7 @@ class Model {
         this.inheritFrom(type, null, attrNames);
     }
 
-    // elements
+    // children
     titleCase(type) {
         return type.name[0].toLowerCase() + type.name.slice(1)
     }
@@ -201,7 +201,6 @@ class Model {
         }
     }
 
-    // child accessors
     getWith(objects, attr, val) {
         for (let obj of objects) {
             if (obj[attr] == val)
@@ -454,8 +453,7 @@ export class SegmentTemplate extends Model {
         // inherit attributes from SegmentTemplates in Periods and AdaptationSets
         // NOTE: this means the call order to init is important - Period must init
         // SegmentTemplate before AdaptationSet and so on.
-        let attrNames = ['bitstreamSwitching', 'initialization', 'index',
-                        'media', 'startNumber', 'timescale', 'duration'];
+        let attrNames = Object.keys(this.attributeDefinitions);
         this.inheritFrom(AdaptationSet, 'segmentTemplate', attrNames);
         this.inheritFrom(Period, 'segmentTemplate', attrNames);
     }
