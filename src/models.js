@@ -135,14 +135,22 @@ class Model {
         if (ancestorObj == undefined)
             return;
 
-        let obj = ancestorObj[attr];
-        if (obj == undefined)
-            return;
+        if (attr != null) {
+            var obj = ancestorObj[attr];
+            if (obj == undefined)
+                return;
+        } else {
+            var obj = ancestorObj;
+        }
 
         for (let name of attrNames) {
             if (this[name] == undefined)
                 this[name] = obj[name];
         }
+    }
+
+    inherit(type, attrNames) {
+        this.inheritFrom(type, null, attrNames);
     }
 
     // elements
@@ -384,6 +392,8 @@ export class Representation extends Model {
         this.initAll(SubRepresentation);
         this.init(SegmentTemplate);
         this.init(BaseURL);
+
+        this.inherit(AdaptationSet, Object.keys(commonAttributes));
 
         // fill in the representation's SegmentTemplate with a copy of the
         // template in AdaptationSet or Period if it doesn't exist
