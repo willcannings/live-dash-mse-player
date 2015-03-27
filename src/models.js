@@ -283,7 +283,7 @@ export class Manifest extends Model {
             this.minBufferTime = DEFAULT_MIN_BUFFER_TIME;
 
         this.init(BaseURL);
-        this.init(Period);
+        this.init(Period);   // only support single period manifests for now
     }
 
     base() {
@@ -356,14 +356,27 @@ export class AdaptationSet extends Model {
             maxFrameRate:               integer,
             maxWidth:                   integer,
             maxHeight:                  integer,
+            contentType:                str,
             par:                        str,
-            lang:                       str
+            lang:                       str,
+
+            group:                      integer,
+            id:                         integer
         });
+
+        this.index = AdaptationSet.nextIndex();
 
         this.initAll(ContentComponent);
         this.init(SegmentTemplate);
         this.initAll(Representation);
     }    
+
+    static nextIndex() {
+        if (this._nextIndex == undefined)
+            this._nextIndex = 0;
+        this._nextIndex += 1;
+        return this._nextIndex;
+    }
 }
 
 export class ContentComponent extends Model {
@@ -507,6 +520,9 @@ export class S extends Model {
             d: integer,     // duration
             r: integer      // num repeats
         });
+
+        if (this.r == undefined)
+            this.r = 0;
     }
 }
 
