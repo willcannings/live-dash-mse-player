@@ -1,0 +1,92 @@
+player-splash {
+    #groups, #links {
+        position: absolute;
+        top: 0px;
+        bottom: 0px;
+    }
+
+    #groups {
+        z-index: 2;
+        left: 0px;
+        width: 400px;
+        box-shadow: 8px 0px 8px rgba(0,0,0,0.07);
+        @include background-image(linear-gradient(120deg, lighten(#191725, 7%), #191725));
+
+        > ul {
+            padding-left: 70px;
+            padding-right: 70px;
+            padding-top: 200px;
+
+            > li {
+                color: white;
+                text-transform: uppercase;
+                font-weight: 400;
+                font-size: 15px;
+            }
+
+            ul {
+                margin-top: 15px;
+                margin-bottom: 80px;
+
+                li {
+                    color: #ddd;
+                    text-transform: uppercase;
+                    font-weight: 400;
+                    font-size: 14px;
+                    border-bottom: 1px solid #1A7BA1;
+                    padding-bottom: 7px;
+                    margin-bottom: 40px;
+                    opacity: 0.5;
+                    cursor: pointer;
+
+                    &:hover {
+                        opacity: 0.85;
+                    }
+
+                    &.selected {
+                        opacity: 1.0;
+                        cursor: default;
+                    }
+                }
+            }
+        }
+    }
+
+    #links {
+        z-index: 1;
+        left: 400px;
+        right: 0px;
+        @include background-image(linear-gradient(120deg, darken(#674D98, 30%), darken(#C42631, 30%)));
+
+        article > ul {
+            padding-left: 70px;
+            padding-right: 70px;
+            padding-top: 180px;
+
+            li {
+                color: white;
+                margin-bottom: 40px;
+                padding: 20px 25px;
+                cursor: pointer;
+
+                &:hover {
+                    background-color: rgba(0,0,0,0.7);
+                    box-shadow: 0px 4px 8px rgba(0,0,0,0.3);
+                }
+
+                p.name {
+                    text-transform: none;
+                    font-weight: 300;
+                    font-size: 20px;
+                    margin-bottom: 4px;
+                }
+
+                p.url {
+                    color: #aaa;
+                    font-weight: 300;
+                    font-size: 15px;
+                }
+            }
+        }
+    }
+}
