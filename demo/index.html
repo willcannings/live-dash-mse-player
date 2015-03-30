@@ -10,99 +10,22 @@
             <h1><span id="circle"></span>dash mse player</h1>
         </header>
 
-        <player-splash></player-splash>
-        <player-video></player-video>
+        <player-demo></player-demo>
 
         <!-- demo player UI -->
         <script src="js/riot+compiler.js"></script>
         <script src="splash.html.js" type="riot/tag"></script>
         <script src="player.html.js" type="riot/tag"></script>
+        <script src="demo.html.js" type="riot/tag"></script>
+
+        <script src="gulp-babel/node_modules/babel-core/browser.js"></script>
+        <script src="js/links.js" type="text/babel"></script>
+
 
         <!-- player -->
         <script src="jquery/dist/jquery.min.js"></script>
         <script src="uri.js/src/URI.min.js"></script>
         <script src="models.js"></script>
         <script src="player.js"></script>
-
-        <script>
-            var groupings = [
-                {
-                    name: "Static, fixed length",
-                    groups: [
-                        {
-                            name: "Single resolution, multi rate",
-                            links: [
-                                {
-                                    name: "Akamai - Elephant's Dream",
-                                    url: "http://dash.edgesuite.net/dash264/TestCases/1a/netflix/exMPD_BIP_TC1.mpd"
-                                },
-                                {
-                                    name: "Akamai - Big Buck Bunny",
-                                    url: "http://dash.edgesuite.net/dash264/TestCases/1a/sony/SNE_DASH_SD_CASE1A_REVISED.mpd"
-                                }
-                            ]
-                        },
-                        {
-                            name: "Multi resolution, multi rate",
-                            links: [
-                                {
-                                    name: "Unified Streaming - Caminandes",
-                                    url: "http://demo.unified-streaming.com/video/caminandes/caminandes.ism/caminandes.mpd"
-                                },
-                                {
-                                    name: "Akamai - Elephant's Dream",
-                                    url: "http://dash.edgesuite.net/dash264/TestCases/2c/qualcomm/1/MultiResMPEG2.mpd"
-                                },
-                                {
-                                    name: "Akamai - Envivio Demo",
-                                    url: "http://dash.edgesuite.net/envivio/dashpr/clear/Manifest.mpd"
-                                },
-                                {
-                                    name: "Digital Primates - Counter Sequence (Segment Template)",
-                                    url: "http://www.digitalprimates.net/dash/streams/mp4-live-template/mp4-live-mpd-AV-BS.mpd"
-                                },
-                                {
-                                    name: "Digital Primates - Counter Sequence (Segment List)",
-                                    url: "http://www.digitalprimates.net/dash/streams/gpac/mp4-main-multi-mpd-AV-NBS.mpd"
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    name: "Dynamic, live",
-                    groups: [
-                        {
-                            name: "Single resolution, single rate",
-                            links: [
-                                {
-                                    name: "MobiTV - Colour Bars",
-                                    url: "http://54.201.151.65/livesim/tfdt_32/testpic_2s/Manifest.mpd"
-                                }
-                            ]
-                        },
-                        {
-                            name: "Multi resolution, multi rate",
-                            links: [
-                                {
-                                    name: "Unified Streaming - Loop",
-                                    url: "http://live.unified-streaming.com/loop/loop.isml/loop.mpd?format=mp4&session_id=25020"
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ];
-
-            var app = {
-                groupings: groupings,
-                state: {
-                    splash: true,
-                    mpd: null
-                }
-            };
-
-            riot.mount('*', app);
-        </script>
     </body>
 </html>

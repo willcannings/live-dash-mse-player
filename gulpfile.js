@@ -77,7 +77,7 @@ gulp.task('watch', function() {
 
 // watch files for changes & reload
 gulp.task('browser-sync', function () {
-    var baseDirs = ['dist', '.tmp', 'demo', 'bower_components'];
+    var baseDirs = ['dist', '.tmp', 'demo', 'bower_components', 'node_modules'];
     //var indexPath = path.join(__dirname, 'demo', 'player.html');
 
     browserSync.init([paths.css], {

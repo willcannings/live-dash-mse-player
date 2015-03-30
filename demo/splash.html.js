@@ -1,67 +1,54 @@
 <player-groups>
     <section id="groups">
         <ul>
-            <li each={opts.groupings}>
-                {name}
+            <li each={grouping in app.groupings}>
+                <span>{grouping.name}</span>
                 <ul>
                     <li
-                        each={groups}
-                        class={selected: selected}
+                        each={group in grouping.groups}
+                        class={selected: group.selected()}
                         onclick={parent.parent.select}
                     >
-                        {name}
+                        {group.name}
                     </li>
                 </ul>
             </li>
         </ul>
     </section>
 
-    select(evt) {
-        opts.groupings.forEach(function(grouping) {
-            grouping.groups.forEach(function(group) {
-                group.selected = false;
-            });
-        });
-        evt.item.selected = true;
-        riot.update();
-    }
+    <script>
+        select(event) {
+            var group = event.item.group;
+            riot.route(group.grouping.slug + '/' + group.slug);
+        }
+    </script>
 </player-groups>
 
 
 <player-links>
     <section id="links">
-        <div each={opts.groupings}>
-            <article each={groups}>
-                <ul show={selected}>
-                    <li
-                        each={links}
-                        onclick={parent.parent.parent.select}
-                    >
-                        <p class="name">{name}</p>
-                        <p class="url">{url}</p>
+        <div each={grouping in app.groupings}>
+            <article each={group in grouping.groups}>
+                <ul show={group.selected()}>
+                    <li each={link in group.links} onclick={parent.parent.parent.select}>
+                        <p class="name">{link.name}</p>
+                        <p class="url">{link.url}</p>
                     </li>
                 </ul>
             </article>
         </div>
     </section>
 
-    select(evt) {
-        var url = evt.item.url;
-        opts.state.mpd = url;
-        opts.state.splash = false;
-        riot.update();
-
-        var player = new Player({
-                    url: url,
-                    element: $('#video-stream')
-            });
-    }
+    <script>
+        select(event) {
+            var link = event.item.link;
+            riot.route(link.group.grouping.slug + '/' + link.group.slug + '/' + link.slug);
+        }
+    </script>
 </player-links>
 
 
 <player-splash>
-    <div show={opts.state.splash}>
-        <player-groups groupings={opts.groupings}></player-groups>
-        <player-links groupings={opts.groupings} state={opts.state}></player-links>
-    </div>
+    <player-groups></player-groups>
+    <player-links></player-links>
 </player-splash>
