@@ -7,61 +7,81 @@
 // element/media source object, and an instance of a
 // PresentationController. The majority of the playback logic
 // sits in the controller and other classes.
+const VIDEO_EVENTS = [  'loadstart', 'emptied', 'canplay', 'canplaythrough',
+                        'ended', 'progress', 'stalled', 'playing', 'suspend',
+                        'loadedmetadata', 'waiting', 'abort', 'loadeddata',
+                        'play', 'error', 'pause', 'durationchange', 'seeking',
+                        'seeked'
+                     ];
+
 class Player {
     constructor(opts) {
         // TODO: ensure 'url' is provided
         // merge default and supplied options
-        this.options = jQuery.extend({
+        this.options = Object.assign({
             pauseDetectInterval: 5,
             debugInterval: 2
         }, opts);
 
+        let player = this;
+
         // ---------------------------
         // video element
         // ---------------------------
-        this.element = this.options.element;
-        if (this.element.jquery)
-            this.element = this.element[0];
-        this.video = jQuery(this.element);
-        
-        this.video.on('loadstart emptied canplay canplaythrough ended progress' +
-                 'stalled playing suspend loadedmetadata waiting abort' +
-                 'loadeddata play error pause durationchange seeking seeked',
-                 (e) => {
-            console.log('video element:', e.type)
-        });
+        this.video = this.options.element;
+        if (this.video.jquery)
+            this.video = this.video[0];
+
+        // for debugging - publicise all video events
+        this.videoEventHandler = function(event) {
+            console.log('video element event:', event.type);
+        }
+
+        for (let eventType of VIDEO_EVENTS) {
+            this.video.addEventListener(eventType, this.videoEventHandler);
+        }
 
         // detect when playback stops
-        this.video.on('timeupdate', () => {
-            if (this.playbackTimer)
-                clearTimeout(this.playbackTimer);
+        this.video.addEventListener('timeupdate',
+            this.videoTimeUpdateEventHandler = function() {
+                if (player.playbackTimer)
+                    clearTimeout(player.playbackTimer);
 
-            let interval = this.options.pauseDetectInterval;
-            this.playbackTimer = setTimeout(() => {
-                console.error(`timeupdate not triggered for ${interval}s, playback stopped?`);
-            }, interval * 1000);
-        });
+                let interval = player.options.pauseDetectInterval;
+                player.playbackTimer = setTimeout(() => {
+                    console.error(
+                        `timeupdate not triggered for ${interval}s, playback stopped?`
+                    );
+                }, interval * 1000);
+            }
+        );
 
 
         // ---------------------------
         // backing media source
         // ---------------------------
         this.mediaSource = new MediaSource();
-        this.element.src = URL.createObjectURL(this.mediaSource);
+        this.video.src   = URL.createObjectURL(this.mediaSource);
 
-        this.mediaSource.addEventListener('sourceopen', () => {
-            console.log('media source open');
-            this.presentationController.reloadManifest();
-            this.emit('loading');
-        });
+        this.mediaSource.addEventListener('sourceopen',
+            this.mseOpenHandler = function() {
+                console.log('media source open');
+                player.presentationController.reloadManifest();
+                player.emit('loading');
+            }
+        );
 
-        this.mediaSource.addEventListener('sourceended', () => {
-            console.log('media source ended');
-        });
+        this.mediaSource.addEventListener('sourceended',
+            this.mseEndedHandler = function() {
+                console.log('media source ended');
+            }
+        );
 
-        this.mediaSource.addEventListener('sourceclose', () => {
-            console.log('media source closed');
-        });
+        this.mediaSource.addEventListener('sourceclose',
+            this.mseCloseHandler = function() {
+                console.log('media source closed');
+            }
+        );
 
 
         // ---------------------------
@@ -69,10 +89,10 @@ class Player {
         // ---------------------------
         // show buffer info every second while playing
         this.bufferInfo = setInterval(() => {
-            let current = this.element.currentTime;
+            let current = this.video.currentTime;
 
-            if (this.element.buffered.length > 0) {
-                let last = this.element.buffered.end(0);
+            if (this.video.buffered.length > 0) {
+                let last = this.video.buffered.end(0);
                 let remaining = last - current;
                 console.log('* time:', current, ' buffered:', last, 'remaining:', remaining);
             } else {
@@ -90,8 +110,35 @@ class Player {
         this.presentationController = new PresentationController(this);
     }
 
-    emit(event) {
-        this.video.trigger('player:' + event);
+    destruct() {
+        console.log('player destructing');
+        this.emit('destructing');
+
+        // detach video element event handlers
+        this.video.removeEventListener('timeupdate', this.videoTimeUpdateEventHandler);
+
+        for (let eventType of VIDEO_EVENTS) {
+            this.video.removeEventListener(eventType, this.videoEventHandler);
+        }
+
+        // detach mse event handlers
+        this.mediaSource.removeEventListener('sourceopen', this.mseOpenHandler);
+        this.mediaSource.removeEventListener('sourceended', this.mseEndedHandler);
+        this.mediaSource.removeEventListener('sourceclose', this.mseCloseHandler);
+
+        // free the media source object and url
+        this.video.pause();
+        URL.revokeObjectURL(this.video.src);
+        this.mediaSource = null;
+
+        // clear timers
+        clearTimeout(this.playbackTimer);
+        clearInterval(this.bufferInfo);
+    }
+
+    emit(eventType) {
+        let event = new Event(`player:${eventType}`);
+        this.video.dispatchEvent(event);
     }
 
     state() {
@@ -141,6 +188,7 @@ class PresentationController {
         this.player.emit('stateChanged');
     }
 
+
     // ---------------------------
     // mpd file
     // ---------------------------
@@ -177,6 +225,7 @@ class PresentationController {
         });
     }
 
+
     // ---------------------------
     // presentation initialisation
     // ---------------------------
@@ -193,8 +242,8 @@ class PresentationController {
             this.sources.push(source);
 
             if (source.video() && dimensionsUnset) {
-                this.player.element.width = source.currentRepresentation.width;
-                this.player.element.height = source.currentRepresentation.height;
+                this.player.video.width = source.currentRepresentation.width;
+                this.player.video.height = source.currentRepresentation.height;
                 dimensionsUnset = false;
             }
         }
@@ -212,7 +261,7 @@ class PresentationController {
             try {
                 source.createBuffer();
             } catch(e) {
-                console.log('error creating buffer for source', source, e.stack);
+                console.log(source.id, 'error creating buffer', e.stack, e);
                 this.player.emit('errorCreatingBuffers');
             }
 
@@ -261,9 +310,10 @@ class PresentationController {
         // in a live stream. once all initial segments are loaded, set
         // the video's current playback time to the offset of the
         // first segments so playback can start.
-        let startTime = this.player.element.buffered.start(0);
-        this.player.element.currentTime = startTime;
+        let startTime = this.player.video.buffered.start(0);
+        this.player.video.currentTime = startTime;
         console.log('playback starts from', startTime);
+        this.player.video.play();
     }
 }
 
@@ -280,6 +330,7 @@ class Source {
         this.initialised = false;
         this.firstSegmentLoaded = false;
         this.timeline = new Timeline(this);
+        this.downloader = undefined;
 
         // start playback with the best quality representation
         this.currentRepresentation =
@@ -295,11 +346,11 @@ class Source {
 
     video() {
         return this.adaptationSet.contentType == 'video' ||
-                this.adaptationSet.mimeType.includes('video');
+                this.currentRepresentation.mimeType.includes('video/');
     }
 
     seek(time) {
-        this.timeline.seek(0);
+        this.timeline.seek(time);
     }
 
     createBuffer() {
