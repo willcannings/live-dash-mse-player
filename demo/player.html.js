@@ -1,7 +1,7 @@
 <player-video>
-    <div show={!opts.state.splash}>
+    <div>
         <div>
-            <video id="video-stream"></video>
+            <video id="video-stream" controls></video>
         </div>
     </div>
 </player-video>

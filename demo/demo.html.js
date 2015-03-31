@@ -1,6 +1,6 @@
 <player-demo>
     <player-splash show={!app.route.link}></player-splash>
-    <player-video show={app.route.link}></player-video>
+    <player-video if={app.route.link}></player-video>
 
     <script>
         var self = this;
@@ -12,6 +12,8 @@
             self.update();
 
             if (!app.route.link) {
+                if (window.player)
+                    window.player.destruct();
                 window.player = null;
             } else {
                 var linkObj = Link.findBySlug(grouping, group, link);
