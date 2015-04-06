@@ -61,7 +61,8 @@ gulp.task('dev:js', function () {
     return gulp.src(paths.js)
         .pipe(sourcemaps.init())
             .pipe(babel({
-                modules: 'ignore'
+                modules: 'ignore',
+                optional: 'es7.comprehensions'
             }))
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'));
