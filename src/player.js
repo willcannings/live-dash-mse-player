@@ -412,12 +412,12 @@ class PresentationController {
     // buffering
     // ---------------------------
     tick() {
-        let manifest = this.presentation.manifest;
+        let presentation = this.presentation;
 
         // reload the manifest if minimumUpdatePeriod has passed
-        if (manifest.dynamic && manifest.minimumUpdatePeriod) {
+        if (presentation.operationMode == Presentation.simpleLiveOperation) {
             let timeSinceManifest = performance.now() - this.manifestLoaded;
-            if (timeSinceManifest >= manifest.minimumUpdatePeriod)
+            if (timeSinceManifest >= presentation.manifest.minimumUpdatePeriod)
                 this.loadManifest();
         }
         
@@ -431,11 +431,11 @@ class PresentationController {
             remaining = last - current;
         }
 
-        let minBuffer = (manifest.minBufferTime / 1000);
+        let minBuffer = (presentation.manifest.minBufferTime / 1000);
         minBuffer *= 2;
 
         if (remaining < minBuffer) {
-            for (let source of this.presentation.sources) {
+            for (let source of presentation.sources) {
                 source.timeline.currentPeriod.downloadNextSegment();
             }
 

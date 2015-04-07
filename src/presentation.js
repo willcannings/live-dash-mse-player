@@ -25,6 +25,7 @@ class Presentation {
         // manifest models
         this.manifests      = [];
         this.manifest       = null;
+        this.operationMode  = undefined;
 
         // sources and timelines
         this.currentTime    = 0.0;
@@ -54,6 +55,18 @@ class Presentation {
     }
 
     createSources() {
+        // determine operation mode
+        if (this.manifest.static) {
+            this.operationMode = Presentation.staticOperation;
+        } else {
+            if (this.manifest.minimumUpdatePeriod)
+                this.operationMode = Presentation.simpleLiveOperation;
+            else
+                this.operationMode = Presentation.dynamicOperation;
+        }
+
+        // create a source for each adaptation set; some will be deleted later
+        // once a supported source has been found for each content type
         console.log('loading all adaptation sets as potential sources');
         let period = this.manifest.periods[0];
 
@@ -61,11 +74,12 @@ class Presentation {
             let source = new Source(this);
             this.sources.push(source);
 
-            // prepare the source with the its adaptation set
+            // prepare the source with its initial period and adaptation set
             source.timeline.appendPeriod(period, adaptationSet);
             source.prepare();
         }
 
+        // allow the controller to decide which sources will be used
         this.state = Presentation.sourcesCreated;
         this.controller.sourcesPrepared();
     }
@@ -81,8 +95,15 @@ class Presentation {
     }
 };
 
-Presentation.uninitialised = 0;
+// presentation states
+Presentation.uninitialised  = 0;
 Presentation.sourcesCreated = 1;
+
+// presentation operation modes (dash-if live iops v0.9)
+Presentation.staticOperation     = 0;   // on demand
+Presentation.dynamicOperation    = 1;   // live edge
+Presentation.simpleLiveOperation = 2;   // live, reloading
+Presentation.mainLiveOperation   = 3;   // not supported
 
 
 // --------------------------------------------------
