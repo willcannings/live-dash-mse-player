@@ -190,6 +190,10 @@ class Model {
             return this.getLowest(this[varName], attr);
         }
 
+        this[singularTypeName + 'WithMiddle'] = function(attr) {
+            return this.getMiddle(this[varName], attr);
+        }
+
         this[singularTypeName + 'WithHighest'] = function(attr) {
             return this.getHighest(this[varName], attr);
         }
@@ -218,6 +222,12 @@ class Model {
         }
 
         return minObj;
+    }
+
+    getMiddle(unsorted, attr) {
+        let sorted = Array.from(unsorted);
+        sorted.sort((a, b) => a[attr] - b[attr]);
+        return sorted[Math.ceil(sorted.length / 2)];
     }
 
     getHighest(objects, attr) {

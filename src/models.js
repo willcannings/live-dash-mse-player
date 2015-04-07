@@ -23,8 +23,6 @@ export class Manifest extends Model {
             type:                       str
         });
 
-        this.live    = (this.profiles.indexOf('profile:isoff-live') != -1);
-
         // defined like this so a manifest is guaranteed either dynamic or not
         this.dynamic = (this.type == 'dynamic');
         this.static  = (!this.dynamic);

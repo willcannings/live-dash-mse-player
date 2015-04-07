@@ -364,8 +364,13 @@ class PresentationController {
 
         // all sources have an initialisation 'header' file to be loaded to the
         // source's buffer before any content segments are appended
-        for (let source of presentation.sources)
+        for (let source of presentation.sources) {
             source.loadInitFile();
+            console.log(
+                'starting', source.contentType,
+                'with bandwidth', source.bandwidth
+            );
+        }
     }
 
     sourceInitialised() {
@@ -396,10 +401,7 @@ class PresentationController {
         let manifest = this.presentation.manifest;
 
         // reload the manifest if minimumUpdatePeriod has passed
-        if (manifest.dynamic) {
-            if (!manifest.minimumUpdatePeriod)
-                throw 'dynamic manifest does not specify an update period';
-
+        if (manifest.dynamic && manifest.minimumUpdatePeriod) {
             let timeSinceManifest = performance.now() - this.manifestLoaded;
             if (timeSinceManifest >= manifest.minimumUpdatePeriod)
                 this.loadManifest();
@@ -418,16 +420,17 @@ class PresentationController {
         let minBuffer = (manifest.minBufferTime / 1000);
         minBuffer *= 2;
 
-        if (remaining >= minBuffer) {
+        if (remaining < minBuffer) {
+            for (let source of this.presentation.sources) {
+                source.timeline.currentPeriod.downloadNextSegment();
+            }
+
+        } else {
             if (this.state == PresentationController.sourcesInitialised) {
                this.setState(PresentationController.bufferAvailable);
                video.currentTime = video.buffered.start(0);
                video.play();
            }
-        } else {
-            for (let source of this.presentation.sources) {
-                source.timeline.currentPeriod.downloadNextSegment();
-            }
         }
     }
 }

@@ -87,17 +87,6 @@ window.Link = Link;
 // links
 // --------------------------------------------------
 var staticMPDs = new Grouping('Static, fixed length', (grouping) => {
-    grouping.newGroup('Single resolution, multi rate', (group) => {
-        group.newLink(
-            "Akamai - Elephant's Dream",
-            "http://dash.edgesuite.net/dash264/TestCases/1a/netflix/exMPD_BIP_TC1.mpd"
-        );
-        group.newLink(
-            "Akamai - Big Buck Bunny",
-            "http://dash.edgesuite.net/dash264/TestCases/1a/sony/SNE_DASH_SD_CASE1A_REVISED.mpd"
-        );
-    });
-
     grouping.newGroup('Multi resolution, multi rate', (group) => {
         group.newLink(
             "Unified Streaming - Caminandes",
@@ -114,10 +103,6 @@ var staticMPDs = new Grouping('Static, fixed length', (grouping) => {
         group.newLink(
             "Digital Primates - Counter Sequence (Segment Template)",
             "http://www.digitalprimates.net/dash/streams/mp4-live-template/mp4-live-mpd-AV-BS.mpd"
-        );
-        group.newLink(
-            "Digital Primates - Counter Sequence (Segment List)",
-            "http://www.digitalprimates.net/dash/streams/gpac/mp4-main-multi-mpd-AV-NBS.mpd"
         );
     });
 });

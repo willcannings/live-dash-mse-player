@@ -20,14 +20,15 @@ class Presentation {
     constructor(controller) {
         this.controller     = controller;
         this.player         = controller.player;
+        this.state          = Presentation.uninitialised;
 
+        // manifest models
         this.manifests      = [];
         this.manifest       = null;
 
+        // sources and timelines
         this.currentTime    = 0.0;
         this.sources        = [];
-
-        this.state          = Presentation.uninitialised;
     }
 
     destruct() {
@@ -110,7 +111,10 @@ class Source {
     }
 
     destruct() {
-        this.presentation.player.mediaSource.removeSourceBuffer(this.buffer);
+        if (this.buffer) {
+            this.presentation.player.mediaSource.
+                removeSourceBuffer(this.buffer);
+        }
     }
 
     // ---------------------------
@@ -255,10 +259,10 @@ class PeriodTimeline {
         );
 
         // find the new currentRepresentation based on the source's bandwidth
-        // if no bandwidth has been defined, choose the highest to start with
+        // if no bandwidth has been defined, choose the middle to start with
         if (this.source.bandwidth == undefined) {
             this.currentRepresentation = this.adaptationSet.
-                    representationWithLowest('bandwidth');
+                    representationWithMiddle('bandwidth');
         } else {
             this.currentRepresentation = this.adaptationSet.
                     representationWith('bandwidth', this.source.bandwidth);
