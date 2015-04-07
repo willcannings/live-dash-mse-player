@@ -202,6 +202,12 @@ class Player {
         console.log('set video duration to', this.mediaSource.duration);
         this.emit('durationChange');
     }
+
+    setDimensions(width, height) {
+        this.videoWidth = width;
+        this.videoHeight = height;
+        this.emit('dimensionChange');
+    }
 }
 
 
@@ -348,8 +354,7 @@ class PresentationController {
         }
 
         // otherwise set the initial player dimensions
-        this.player.video.width = videoSource.width();
-        this.player.video.height = videoSource.height();
+        this.player.setDimensions(videoSource.width(), videoSource.height());
 
         // remaining sources will not be in the bufferCreated state because
         // they have an incompatible mimetype, or have a contentType already
@@ -368,7 +373,9 @@ class PresentationController {
             source.loadInitFile();
             console.log(
                 'starting', source.contentType,
-                'with bandwidth', source.bandwidth
+                'with bandwidth:', source.bandwidth,
+                'width:', source.width(),
+                'height:', source.height()
             );
         }
     }
