@@ -371,14 +371,14 @@ class PeriodTimeline {
             return;
 
         let nextSegment = this.segments[this.bufferIndex];
-        if (nextSegment.state == Segment.pending) {
-            console.log('downloading segment', nextSegment.url());
-            nextSegment.state = Segment.downloading;
-            this.presentation.controller.downloader.getMedia(
-                nextSegment.url(),
-                nextSegment
-            );
-        }
+        if (nextSegment.state != Segment.pending)
+            return;
+
+        nextSegment.state = Segment.downloading;
+        let url = nextSegment.url();
+
+        this.presentation.controller.downloader.getMedia(url, nextSegment);
+        console.log('downloading', this.source.contentType, 'segment', url);
     }
 
     downloadedSegment() {

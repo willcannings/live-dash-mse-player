@@ -80,11 +80,18 @@ class Player {
         // detect when playback stops
         this.video.addEventListener('timeupdate',
             this.videoTimeUpdateEventHandler = function() {
+                // every time currentTime changes, clear the timer and reset it
+                // for pauseDetectInterval seconds. if playback continues it'll
+                // be cleared again and again until playback stalls
                 if (player.playbackTimer)
                     clearTimeout(player.playbackTimer);
 
                 let interval = player.options.pauseDetectInterval;
+
                 player.playbackTimer = setTimeout(() => {
+                    // pause and end states validly stop playback
+                    if (player.video.paused || player.video.ended)
+                        return;
                     console.error(
                         `timeupdate not triggered for ${interval}s, playback stopped?`
                     );
