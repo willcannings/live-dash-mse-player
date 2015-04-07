@@ -51,9 +51,12 @@ class Player {
         this.options = Object.assign({
             pauseDetectInterval: 5,         // seconds
             debugInterval: 2,               // seconds
+
             mpdTimeout: 30,                 // seconds
             mpdReloadDelay: 0.2,            // seconds
-            mpdMaxReloadAttempts: 5
+            mpdMaxReloadAttempts: 5,
+
+            noTimeshift: false              // true if live streams won't rewind
         }, opts);
 
         let player = this;
@@ -152,9 +155,12 @@ class Player {
         console.log('player destructing');
         this.emit('destructing');
 
+        // allow the controller and presentation to destruct
+        this.controller.destruct();
+        this.controller = null;
+
         // detach video element event handlers
         this.video.removeEventListener('timeupdate', this.videoTimeUpdateEventHandler);
-
         for (let eventType of VIDEO_EVENTS) {
             this.video.removeEventListener(eventType, this.videoEventHandler);
         }
@@ -172,6 +178,10 @@ class Player {
         // clear timers
         clearTimeout(this.playbackTimer);
         clearInterval(this.bufferInfo);
+
+        // cleanup the console
+        console.groupEnd();
+        console.log('destruction complete');
     }
 
 
@@ -267,6 +277,13 @@ class PresentationController {
         );
     }
 
+    destruct() {
+        if (this.tickInterval)
+            clearInterval(this.tickInterval);
+        this.downloader.destruct();
+        this.presentation.destruct();
+    }
+
 
     // ---------------------------
     // manifests
@@ -293,10 +310,6 @@ class PresentationController {
         // add the manifest to the presentation. presentation will process
         // the manifest and add/remove periods and sources as required
         this.presentation.appendManifest(manifest);
-
-        // if (manifest.dynamic) {
-        //     if (!manifest.minimumUpdatePeriod)
-        //         throw 'dynamic manifest does not specify an update period';
     }
 
     // ---------------------------
@@ -370,7 +383,7 @@ class PresentationController {
         console.log('all sources initialised, buffering segments');
 
         // seek to an initial start or live edge and begin buffering segments
-        setInterval(() => {
+        this.tickInterval = setInterval(() => {
             this.tick();
         }, 100);
     }
@@ -384,6 +397,9 @@ class PresentationController {
 
         // reload the manifest if minimumUpdatePeriod has passed
         if (manifest.dynamic) {
+            if (!manifest.minimumUpdatePeriod)
+                throw 'dynamic manifest does not specify an update period';
+
             let timeSinceManifest = performance.now() - this.manifestLoaded;
             if (timeSinceManifest >= manifest.minimumUpdatePeriod)
                 this.loadManifest();

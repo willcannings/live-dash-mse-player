@@ -30,6 +30,11 @@ class Presentation {
         this.state          = Presentation.uninitialised;
     }
 
+    destruct() {
+        for (let source of this.sources)
+            source.destruct();
+    }
+
     appendManifest(manifest) {
         this.manifests.push(manifest);
         this.manifest = manifest;
@@ -102,6 +107,10 @@ class Source {
         this.buffer         = null;
         this.bandwidth      = undefined;
         this.state          = Source.uninitialised;
+    }
+
+    destruct() {
+        this.presentation.player.mediaSource.removeSourceBuffer(this.buffer);
     }
 
     // ---------------------------

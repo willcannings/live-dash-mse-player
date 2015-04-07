@@ -41,9 +41,6 @@ class Request {
     }
 
     start(options) {
-        // create a locally scoped xhr object. request objects are kept for
-        // timing information, and we don't want to hold a strong reference
-        // to the response data for this long.
         let xhr = new XMLHttpRequest();
         xhr.open('GET', options.url);
 
@@ -95,6 +92,7 @@ class Request {
         xhr.onerror = function() {
             request.state = Request.error;
             options.processor.error(xhr);
+            this.xhr = null;
         }
 
         xhr.onabort = function() {
@@ -104,6 +102,7 @@ class Request {
         xhr.ontimeout = function() {
             request.state = Request.timeout;
             options.processor.timeout(xhr);
+            this.xhr = null;
         }
 
         // http was successful, but only 200 responses are accepted
@@ -111,6 +110,7 @@ class Request {
             if (this.status == 200) {
                 request.state = Request.success;
                 options.processor.success(xhr);
+                this.xhr = null;
             } else {
                 xhr.onerror();
             }
@@ -120,7 +120,23 @@ class Request {
         this.requestStart = performance.now();
         xhr.send();
 
+        // capture xhr on the request object for the lifetime of the connection
+        // it's set to null once a processor callback is fired for memory -
+        // request objects are kept for timing information, and we don't want
+        // to hold a strong reference to the response data for this long.
+        this.xhr = xhr;
         return this;
+    }
+
+    destruct() {
+        if (!this.state == Request.inprogress || !this.xhr)
+            return;
+
+        // ignore the abort during destruction, otherwise the processor's error
+        // handler will be called, and another request potentially scheduled
+        this.xhr.onabort = function() {}
+        this.xhr.abort();
+        this.state = Request.error;
     }
 };
 
@@ -139,6 +155,13 @@ class Downloader {
     constructor(controller) {
         this.controller = controller;
         this.requestHistory = [];
+    }
+
+    destruct() {
+        for (let request of this.requestHistory) {
+            if (request.state == Request.inprogress)
+                request.destruct();
+        }
     }
 
     getMPD(url, processor) {
