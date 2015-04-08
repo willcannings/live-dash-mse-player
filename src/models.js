@@ -125,7 +125,12 @@ export class AdaptationSet extends Model {
         this.initAll(ContentComponent);
         this.init(SegmentTemplate);
         this.initAll(Representation);
-    }    
+
+        // adaptation sets are required to have a mime type, but this
+        // requirement isn't always obeyed
+        if (this.mimeType == undefined)
+            this.mimeType = this.representations[0].mimeType;
+    }
 
     static nextIndex() {
         if (this._nextIndex == undefined)

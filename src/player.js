@@ -218,46 +218,6 @@ class Player {
 }
 
 
-// updatePeriods(manifest) {
-//     // ensure all periods in dynamic manifests have ids
-//     if (manifest.dynamic) {
-//         let anyMissingID = manifest.periods.some((period) => {
-//             return period.id == undefined;
-//         });
-
-//         if (anyMissingID)
-//             throw 'some periods in dynamic manifest are missing an id';
-//     }
-
-//     // updating the set of period involves removing periods that no longer
-//     // appear in the manifest, updating periods that still exist, and
-//     // adding new periods. the id to period map helps check for presence.
-//     let controller = this.controller;
-//     let existing = new Map([
-//         for (period of controller.periods)
-//             [period.id, period]
-//     ]);
-
-//     // add or update periods. as a period is discovered in the existing map
-//     // its id is deleted. the remaining ids no longer exist in the manifest.
-//     for (let period of manifest.periods) {
-//         if (manifest.static || !existing.has(period.id)) {
-//             controller.periods.push(new TimelinePeriod(period, controller));
-//         } else {
-//             existing.get(period.id).update(period);
-//             existing.delete(period.id);
-//         }
-//     };
-
-//     // any remaining ids have been deleted. only delete the period if the
-//     // period ended before current presentation time - the timeshift buffer
-//     controller.periods = controller.periods.filter((period) => {
-//         // TODO: determine whether it's safe to delete the period
-//         return controller.static || !existing.has(period.id);
-//     });
-// }
-
-
 // --------------------------------------------------
 // presentation controller
 // --------------------------------------------------
@@ -361,7 +321,7 @@ class PresentationController {
         }
 
         // otherwise set the initial player dimensions
-        this.player.setDimensions(videoSource.width(), videoSource.height());
+        this.player.setDimensions(videoSource.width, videoSource.height);
 
         // remaining sources will not be in the bufferCreated state because
         // they have an incompatible mimetype, or have a contentType already
@@ -378,12 +338,20 @@ class PresentationController {
         // source's buffer before any content segments are appended
         for (let source of presentation.sources) {
             source.loadInitFile();
-            console.log(
-                'starting', source.contentType,
-                'with bandwidth:', source.bandwidth,
-                'width:', source.width(),
-                'height:', source.height()
-            );
+
+            if (source.video) {
+                console.log(
+                    'starting', source.contentType,
+                    'with bandwidth:', source.bandwidth,
+                    'width:', source.width,
+                    'height:', source.height
+                );
+            } else {
+                console.log(
+                    'starting', source.contentType,
+                    'with bandwidth:', source.bandwidth
+                );
+            }
         }
     }
 
@@ -396,6 +364,11 @@ class PresentationController {
             sources.every(source => source.state == Source.initialised);
         if (!allInitialised)
             return;
+
+        // move to live edge if required
+        if (this.presentation.willStartAtLiveEdge) {
+
+        }
 
         // transition
         this.setState(PresentationController.sourcesInitialised);
@@ -415,7 +388,7 @@ class PresentationController {
         let presentation = this.presentation;
 
         // reload the manifest if minimumUpdatePeriod has passed
-        if (presentation.operationMode == Presentation.simpleLiveOperation) {
+        if (presentation.willReloadManifest) {
             let timeSinceManifest = performance.now() - this.manifestLoaded;
             if (timeSinceManifest >= presentation.manifest.minimumUpdatePeriod)
                 this.loadManifest();
