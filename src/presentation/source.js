@@ -49,7 +49,6 @@ class Source extends PlayerObject {
     // ---------------------------
     queueSegments(startTime, endTime) {
         console.log(this.contentType, 'queueing', startTime, endTime);
-        console.log(this.content.segments[0].start, this.content.segments[this.content.segments.length - 1].end);
         let segments = this.content.segmentsInRange(startTime, endTime);
 
         if (segments.length == 0) {
