@@ -1,5 +1,12 @@
 # dash mse player
 
+## Running
+
+* npm install
+* bower install
+* gulp serve
+* browse to http://localhost:7000/index.html
+
 
 ## Chrome
 
@@ -33,3 +40,14 @@ To enable MSE:
 ## IE
 
 * all versions: untested
+
+
+## DASH Documentation
+
+* [DASH ISO 23009-1](http://standards.iso.org/ittf/PubliclyAvailableStandards/c065274_ISO_IEC_23009-1_2014.zip)
+* DASH-IF profiles:
+** [DASH-AVC/264 v1](http://dashif.org/w/2013/06/DASH-AVC-264-base-v1.03.pdf)
+** [DASH-AVC/264 v2](http://dashif.org/w/2013/08/DASH-AVC-264-v2.00-hd-mca.pdf)
+** [DASH-IF Live v0.9](http://dashif.org/w/2014/08/DASH-IF-live-v0.9.pdf)
+* DVB profiles:
+** [DVB Dash A168](https://www.dvb.org/resources/public/standards/a168_dvb-dash.pdf)
