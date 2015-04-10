@@ -121,6 +121,11 @@ var dynamicMPDs = new Grouping('Dynamic, live', (grouping) => {
             "MobiTV - Colour Bars (6s segments)",
             "http://eu1.eastmark.net/pdash/testpic_6s/Manifest.mpd"
         );
+        group.newLink(
+            "Microsoft East US Channel 1",
+            "http://B028.wpc.azureedge.net/80B028/Samples/a38e6323-95e9-4f1f-9b38-75eba91704e4/5f2ce531-d508-49fb-8152-647eba422aec.ism/Manifest(format=mpd-time-csf)"
+        );
+        
     });
 
     grouping.newGroup('Multi resolution, multi rate', (group) => {
