@@ -4,6 +4,9 @@ class PresentationController extends PlayerObject {
         this.options            = player.options;
         this.state              = PresentationController.uninitialised;
 
+        // source options
+        this.hasAudio           = !player.options.ignoreAudio;
+
         // mpd downloading and processing
         this.loadingManifest    = false;
         this.downloader         = new Downloader(this);
@@ -71,16 +74,15 @@ class PresentationController extends PlayerObject {
     // ---------------------------
     sourcesPrepared() {
         console.log('initialising sources and creating buffers');
+
         let videoSource = this.presentation.videoSource;
-        let audioSource = this.presentation.audioSource;
-
-        // set the initial player dimensions
         this.player.setDimensions(videoSource.width, videoSource.height);
-
-        // create buffers based on the initially selected representation of
-        // each content type
         videoSource.createBuffer();
-        audioSource.createBuffer();
+
+        if (this.hasAudio) {
+            var audioSource = this.presentation.audioSource;
+            audioSource.createBuffer();
+        }
 
         this.setState(PresentationController.sourceBuffersCreated);
         console.log('buffers created, waiting for init files');
@@ -95,11 +97,13 @@ class PresentationController extends PlayerObject {
             'height:', videoSource.height
         );
 
-        audioSource.loadInitFile();
-        console.log(
-            'starting', audioSource.contentType,
-            'with bandwidth:', audioSource.bandwidth
-        );
+        if (this.hasAudio) {
+            audioSource.loadInitFile();
+            console.log(
+                'starting', audioSource.contentType,
+                'with bandwidth:', audioSource.bandwidth
+            );
+        }
     }
 
     sourceInitialised() {
@@ -107,9 +111,15 @@ class PresentationController extends PlayerObject {
 
         // wait until all sources are successfully initialised to prevent
         // downloading segments unnecessarily
+        let audioInitialised = true;
+
+        if (this.hasAudio)
+            audioInitialised = presentation.audioSource.state ==
+                                                    Source.initialised;
         let allInitialised =
             presentation.videoSource.state == Source.initialised &&
-            presentation.audioSource.state == Source.initialised;
+            audioInitialised;
+            
 
         if (!allInitialised)
             return;
@@ -167,9 +177,12 @@ class PresentationController extends PlayerObject {
             }
         }
 
-        let videoEnd = presentation.videoSource.queueSegments(startTime, endTime);
-        let audioEnd = presentation.audioSource.queueSegments(startTime, endTime);
-        this.nextStartTime = Math.min(videoEnd, audioEnd);
+        this.nextStartTime = presentation.videoSource.queueSegments(startTime, endTime);
+
+        if (this.hasAudio) {
+            let audioEnd = presentation.audioSource.queueSegments(startTime, endTime);
+            this.nextStartTime = Math.min(this.nextStartTime, audioEnd);
+        }
     }
 
     tick() {
@@ -186,18 +199,25 @@ class PresentationController extends PlayerObject {
         let video = this.player.video;
         let current = video.currentTime;
         let videoRemaining = presentation.videoSource.bufferEnd - current;
-        let audioRemaining = presentation.audioSource.bufferEnd - current;
+        let bufferAvailable = true;
 
         // TODO: take into account source bitrate, current download conditions
         let minBuffer = (presentation.manifest.minBufferTime / 1000);
 
-        if (videoRemaining < minBuffer)
+        if (videoRemaining < minBuffer) {
             presentation.videoSource.downloadNextSegment();
+            bufferAvailable = false;
+        }
 
-        if (audioRemaining < minBuffer)
-            presentation.audioSource.downloadNextSegment();
+        if (this.hasAudio) {
+            let audioRemaining = presentation.audioSource.bufferEnd - current;
+            if (audioRemaining < minBuffer) {
+                presentation.audioSource.downloadNextSegment();
+                bufferAvailable = false;
+            }
+        }
 
-        if (videoRemaining >= minBuffer && audioRemaining >= minBuffer) {
+        if (bufferAvailable) {
             if (this.state == PresentationController.sourcesInitialised) {
                this.setState(PresentationController.bufferAvailable);
                video.currentTime = video.buffered.start(0);

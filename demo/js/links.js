@@ -104,14 +104,22 @@ var staticMPDs = new Grouping('Static, fixed length', (grouping) => {
             "Digital Primates - Counter Sequence (Segment Template)",
             "http://www.digitalprimates.net/dash/streams/mp4-live-template/mp4-live-mpd-AV-BS.mpd"
         );
+        group.newLink(
+            "HbbTV 5min Demo",
+            "http://akamai-progressive.irt.de/irt_dash_hbbtv_5min/video_format_switching_progressive.mpd"
+        );
     });
 });
 
 var dynamicMPDs = new Grouping('Dynamic, live', (grouping) => {
     grouping.newGroup('Single resolution, single rate', (group) => {
         group.newLink(
-            "MobiTV - Colour Bars",
+            "MobiTV - Colour Bars (2s segments)",
             "http://54.201.151.65/livesim/tfdt_32/testpic_2s/Manifest.mpd"
+        );
+        group.newLink(
+            "MobiTV - Colour Bars (6s segments)",
+            "http://eu1.eastmark.net/pdash/testpic_6s/Manifest.mpd"
         );
     });
 
@@ -119,6 +127,10 @@ var dynamicMPDs = new Grouping('Dynamic, live', (grouping) => {
         group.newLink(
             "Unified Streaming - Loop",
             "http://live.unified-streaming.com/loop/loop.isml/loop.mpd?format=mp4&session_id=25020"
+        );
+        group.newLink(
+            "Akamai Test Live Stream",
+            "http://24x7dash-i.akamaihd.net/dash/live/900080/elemental/dash.mpd"
         );
     });
 });

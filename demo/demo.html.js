@@ -19,7 +19,8 @@
                 var linkObj = Link.findBySlug(grouping, group, link);
                 window.player = new Player({
                     url: linkObj.url,
-                    element: $('#video-stream')
+                    element: $('#video-stream'),
+                    ignoreAudio: true
                 });
             }
         }

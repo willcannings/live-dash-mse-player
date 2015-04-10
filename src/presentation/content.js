@@ -85,7 +85,9 @@ class Content extends PlayerObject {
 
         console.log('updated', this.source.contentType,
                     'interval', this.interval.id,
-                    'with', this.segments.length, 'segments');
+                    'with', this.segments.length, 'segments',
+                    this.segments[0].start,
+                    this.segments[this.segments.length - 1].end);
     }
 
     contentDerivedDuration() {

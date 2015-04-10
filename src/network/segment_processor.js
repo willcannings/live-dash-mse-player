@@ -52,7 +52,7 @@ class Segment extends PlayerObject {
     }
 
     equal(other) {
-        this.duration == other.duration &&
+        return this.duration == other.duration &&
             (this.time == other.time || this.number == other.number);
     }
 

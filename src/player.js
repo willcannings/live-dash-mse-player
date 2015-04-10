@@ -56,7 +56,8 @@ class Player {
             mpdReloadDelay: 0.2,            // seconds
             mpdMaxReloadAttempts: 5,
 
-            noTimeshift: false              // true if live streams won't rewind
+            noTimeshift: false,             // true if live streams won't rewind
+            ignoreAudio: false              // skip audio source when true
         }, opts);
 
         let player = this;

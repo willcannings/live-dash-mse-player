@@ -55,6 +55,9 @@ class Source extends PlayerObject {
             console.warn(this.contentType, 'produced no segments between',
                          startTime, endTime, this.content);
             return;
+        } else {
+            let starts = [for (s of segments) s.start];
+            console.log('got', segments.length, starts.join(', '));
         }
 
         // segments and queuedSegments may share some segments. find the first
@@ -75,7 +78,7 @@ class Source extends PlayerObject {
         this.queuedSegments = this.queuedSegments.
                                     concat(segments.slice(firstIndex));
         console.log('queued', segments.length - firstIndex,
-                    this.contentType, 'segments');
+                    this.contentType, 'new segments');
 
         return segments[segments.length - 1].end;
     }
