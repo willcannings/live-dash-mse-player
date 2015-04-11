@@ -155,6 +155,7 @@ class Downloader {
     constructor(controller) {
         this.controller = controller;
         this.requestHistory = [];
+        this.maxHistoryLength = controller.player.options.maxDownloadHistory;
     }
 
     destruct() {
@@ -164,7 +165,33 @@ class Downloader {
         }
     }
 
+    // ---------------------------
+    // requests
+    // ---------------------------
+    // truncate (from the start) requestHistory to be at most max Download
+    // History length. if there are not enough requests in a completed state
+    // this may not be possible, and the array may grow larger than allowed
+    truncateHistory() {
+        if (this.requestHistory.length <= this.maxHistoryLength)
+            return;
+
+        let remaining = this.requestHistory.length - this.maxHistoryLength;
+
+        for (let i = 0; i < this.requestHistory.length; i++) {
+            if (this.requestHistory[i].state <= Request.inprogress)
+                continue;
+
+            this.requestHistory.splice(i, 1);
+            remaining--;
+
+            if (remaining <= 0)
+                break;
+        }
+
+    }
+
     getMPD(url, processor) {
+        this.truncateHistory();
         this.requestHistory.push(
             new Request().start({
                 url,
@@ -176,6 +203,7 @@ class Downloader {
     }
 
     getMedia(url, processor) {
+        this.truncateHistory();
         this.requestHistory.push(
             new Request().start({
                 url,
@@ -185,14 +213,42 @@ class Downloader {
         );
     }
 
-    averageSpeed() {
+
+    // ---------------------------
+    // history
+    // ---------------------------
+    valueHistory(attr) {
         let SMOOTHING = 0.1;
-        let speed = 0;
+        let min = undefined;
+        let max = undefined;
+        let avg = undefined;
 
         this.requestHistory.forEach((request) => {
-            if (request.state == Request.success)
-                speed = (SMOOTHING * request.speed()) +
-                        ((1 - SMOOTHING) * speed);
+            if (request.state != Request.success)
+                return;
+
+            let value = request[attr]();
+
+            if (avg == undefined)
+                avg = value;
+            else
+                avg = (SMOOTHING * value) + ((1 - SMOOTHING) * avg);
+
+            if (value < min || min == undefined)
+                min = value;
+
+            if (value > max || max == undefined)
+                max = value;
         });
+
+        return {min, avg, max};
+    }
+
+    speedHistory() {
+        return this.valueHistory('speed');
+    }
+
+    latencyHistory() {
+        return this.valueHistory('latency');
     }
 };

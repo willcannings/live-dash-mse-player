@@ -47,20 +47,24 @@ const VIDEO_EVENTS = [  'loadstart', 'emptied', 'canplay', 'canplaythrough',
 
 class Player {
     constructor(opts) {
-        // TODO: ensure 'url' is provided
         this.options = Object.assign({
             pauseDetectInterval: 5,         // seconds
             debugInterval: 2,               // seconds
+            showVideoEvents: true,
 
             mpdTimeout: 30,                 // seconds
             mpdReloadDelay: 0.2,            // seconds
             mpdMaxReloadAttempts: 5,
 
             noTimeshift: false,             // true if live streams won't rewind
-            ignoreAudio: false              // skip audio source when true
+            ignoreAudio: false,             // skip audio source when true
+
+            maxDownloadHistory: 100         // max number of recent requests to cache
         }, opts);
 
-        let player = this;
+        if (!this.options.url)
+            throw 'manifest url must be provided in the "url" option';
+
 
         // ---------------------------
         // video element
@@ -69,9 +73,13 @@ class Player {
         if (this.video.jquery)
             this.video = this.video[0];
 
+        this.video.player = this;
+        let player = this;
+
         // for debugging - publicise all video events
         this.videoEventHandler = function(event) {
-            console.log('video element event:', event.type);
+            if (player.options.showVideoEvents)
+                console.log('video element event:', event.type);
         }
 
         for (let eventType of VIDEO_EVENTS) {
@@ -138,10 +146,16 @@ class Player {
             if (this.video.buffered.length > 0) {
                 let last = this.video.buffered.end(0);
                 let remaining = last - current;
-                console.log('* time:', current, ' buffered:', last,
-                            'remaining:', remaining);
+                let avgSpeed = this.controller.downloader.speedHistory().avg;
+                avgSpeed *= 1000; // seconds
+                avgSpeed /= 1024; // kilobytes
+
+                console.log(`* time: ${current.toFixed(2)}, ` +
+                            `buffered: ${last.toFixed(2)}, ` +
+                            `remaining: ${remaining.toFixed(2)}, ` +
+                            `avg speed: ${avgSpeed.toFixed(2)} kbps`);
             } else {
-                console.log('* time:', current, ' buffered: nil');
+                console.log(`* time: ${current.toFixed(2)}, buffered: nil`);
             }
         }, this.options.debugInterval * 1000);
 
@@ -180,6 +194,7 @@ class Player {
 
         // free the media source object and url
         this.video.pause();
+        this.video.player = null;
         URL.revokeObjectURL(this.video.src);
         this.mediaSource = null;
 
