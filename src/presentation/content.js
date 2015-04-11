@@ -103,6 +103,8 @@ class Content extends PlayerObject {
 
     segmentsInRange(startTime, endTime) {
         let result = [];
+        startTime /= 1000;
+        endTime /= 1000;
 
         for (let segment of this.segments) {
             // ignore the segment if it starts and finishes before the range

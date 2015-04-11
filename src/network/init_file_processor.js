@@ -24,8 +24,7 @@ class InitFile extends RequestProcessor {
 
     success(xhr) {
         console.log('loaded init file for', this.source.contentType);
-        this.source.buffer.appendBuffer(new Uint8Array(xhr.response));
+        this.source.appendInitFile(xhr.response);
         this.source.state = Source.initialised;
-        this.source.presentation.controller.sourceInitialised();
     }
 };

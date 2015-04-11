@@ -10,6 +10,10 @@ class Source extends PlayerObject {
         this.mseType        = null;
         this.buffer         = null;
 
+        // buffer data queue
+        this.appending      = false;
+        this.appendQueue    = [];
+
         // segments queued for download
         this.queuedSegments = [];
         this.queueIndex     = 0;
@@ -22,6 +26,10 @@ class Source extends PlayerObject {
         }
     }
 
+
+    // ---------------------------
+    // buffer
+    // ---------------------------
     createBuffer() {
         // initialise the buffer with the mime type and codec of the initially
         // selected representation of the current (1st at this point) interval
@@ -33,6 +41,51 @@ class Source extends PlayerObject {
         let mediaSource = this.presentation.player.mediaSource;
         this.buffer = mediaSource.addSourceBuffer(this.mseType);
         this.state = Source.bufferCreated;
+
+        this.buffer.addEventListener('update', () => {
+            // segments are added through the appendQueue
+            if (this.appendQueue.length > 0) {
+                // determine the real end time of the segment
+                let segment = this.appendQueue[0];
+                segment.realEnd = this.bufferEnd;
+                segment.data = null;
+
+                // debug log
+                let duration = segment.realEnd - segment.realStart;
+                console.log(this.contentType, 'segment', duration.toFixed(2));
+
+                // remove it from the queue - we're done appending it
+                this.appendQueue.splice(0, 1);
+                this.appending = false;
+
+            // init files are added directly to the buffer
+            } else {
+                this.presentation.controller.sourceInitialised();
+            }
+
+            if (this.appendQueue.length > 0)
+                this._appendNextSegment();
+        });
+    }
+
+    _appendNextSegment() {
+        let segment = this.appendQueue[0];
+        segment.realStart = this.bufferEnd;
+        this.buffer.appendBuffer(new Uint8Array(segment.data));
+    }
+
+    appendSegment(segment) {
+        this.appendQueue.push(segment);
+        if (!this.appending)
+            this._appendNextSegment();
+    }
+
+    appendInitFile(data) {
+        this.buffer.appendBuffer(new Uint8Array(data));
+    }
+
+    truncateBuffer() {
+
     }
 
     loadInitFile() {

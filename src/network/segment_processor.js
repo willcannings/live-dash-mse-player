@@ -70,7 +70,8 @@ class Segment extends PlayerObject {
 
     success(xhr) {
         console.log('loaded segment for', this.content.source.contentType);
-        this.content.source.buffer.appendBuffer(new Uint8Array(xhr.response));
+        this.data = xhr.response;
+        this.content.source.appendSegment(this);
         this.state = Segment.downloaded;
     }
 }
