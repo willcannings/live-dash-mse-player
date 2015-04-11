@@ -220,15 +220,6 @@ export class SegmentTemplate extends Model {
             presentationTimeOffset: integer
         });
 
-        if (this.timescale == undefined)
-            this.timescale = 1;
-
-        if (this.startNumber == undefined)
-            this.startNumber = 1;
-
-        if (this.presentationTimeOffset == undefined)
-            this.presentationTimeOffset = 0;
-
         this.init(SegmentTimeline);
 
         // inherit attributes from SegmentTemplates in Periods and AdaptationSets
@@ -237,6 +228,15 @@ export class SegmentTemplate extends Model {
         let attrNames = Object.keys(this.attributeDefinitions);
         this.inheritFrom(AdaptationSet, 'segmentTemplate', attrNames);
         this.inheritFrom(Period, 'segmentTemplate', attrNames);
+
+        if (this.timescale == undefined)
+            this.timescale = 1;
+
+        if (this.startNumber == undefined)
+            this.startNumber = 1;
+
+        if (this.presentationTimeOffset == undefined)
+            this.presentationTimeOffset = 0;
     }
 
     postSetup() {
