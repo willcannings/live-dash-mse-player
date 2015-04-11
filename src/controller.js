@@ -145,7 +145,7 @@ class PresentationController extends PlayerObject {
         // move to live edge if required
         let presentation = this.presentation;
         let manifest = presentation.manifest;
-        let endTime = presentation.timeline.duration;
+        let endTime = presentation.timeline.duration / 1000;
         let startTime = this.nextStartTime || 0;
 
         if (presentation.willStartAtLiveEdge) {
@@ -159,20 +159,28 @@ class PresentationController extends PlayerObject {
 
                 // start some amount of time before the live edge. if the
                 // manifest specifies a duration, use it, otherwise as a
-                // heuristic use the manifest update duration + 20% for
-                // live presentations, or 2 x the minimum buffer time otherwise
-                let presDelay    = 0;
-                let updatePeriod = 0;
-                let bufferTime   = 0;
+                // heuristic move back half of the timeshift window + min
+                // buffer time, the manifest update period + 20% or just half
+                // the timeshift window otherwise
 
-                if (manifest.suggestedPresentationDelay)
-                    presDelay = manifest.suggestedPresentationDelay / 1000;
-                if (manifest.minimumUpdatePeriod)
-                    updatePeriod = (manifest.minimumUpdatePeriod / 1000) * 1.2;
-                if (manifest.minBufferTime)
-                    bufferTime = (manifest.minBufferTime / 1000) * 2;
+                // ensure start doesn't fall outside the timeshift range
+                let timeshift = manifest.timeShiftBufferDepth / 1000;
+                let minStart = startTime - timeshift;
 
-                startTime -= Math.max(presDelay, updatePeriod, bufferTime);
+                if (manifest.suggestedPresentationDelay) {
+                    startTime -= manifest.suggestedPresentationDelay / 1000;
+                } else {
+                    if (manifest.minBufferTime) {
+                        let bufferTime = manifest.minBufferTime / 1000;
+                        startTime -= (timeshift + bufferTime) / 2;
+                    } else if (manifest.minimumUpdatePeriod) {
+                        startTime -= (manifest.minimumUpdatePeriod / 1000) * 1.2;
+                    } else {
+                        startTime -= timeshift / 2;
+                    }
+                }
+
+                startTime = Math.max(startTime, minStart);
                 startTime = Math.max(startTime, 0);
             }
         }

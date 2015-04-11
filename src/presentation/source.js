@@ -52,7 +52,8 @@ class Source extends PlayerObject {
 
                 // debug log
                 let duration = segment.realEnd - segment.realStart;
-                console.log(this.contentType, 'segment', duration.toFixed(2));
+                console.log('loaded', this.contentType,
+                            'segment, added:', duration.toFixed(2));
 
                 // remove it from the queue - we're done appending it
                 this.appendQueue.splice(0, 1);

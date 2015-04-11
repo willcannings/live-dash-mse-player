@@ -153,7 +153,7 @@ class Player {
                 console.log(`* time: ${current.toFixed(2)}, ` +
                             `buffered: ${last.toFixed(2)}, ` +
                             `remaining: ${remaining.toFixed(2)}, ` +
-                            `avg speed: ${avgSpeed.toFixed(2)} kbps`);
+                            `avg speed: ${avgSpeed.toFixed(2)}kbps`);
             } else {
                 console.log(`* time: ${current.toFixed(2)}, buffered: nil`);
             }

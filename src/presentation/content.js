@@ -103,8 +103,6 @@ class Content extends PlayerObject {
 
     segmentsInRange(startTime, endTime) {
         let result = [];
-        startTime /= 1000;
-        endTime /= 1000;
 
         for (let segment of this.segments) {
             // ignore the segment if it starts and finishes before the range
@@ -122,6 +120,10 @@ class Content extends PlayerObject {
         // replicate the repeat segment if the range ends after repeat start
         if (this.repeatSegment) {
             let segment = this.repeatSegment;
+
+            // skip to startTime
+            while (startTime >= segment.end)
+                segment = segment.generateNext();
 
             while (endTime > segment.start) {
                 result.push(segment)
