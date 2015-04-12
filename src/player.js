@@ -142,6 +142,7 @@ class Player {
         // show buffer info every second while playing
         this.bufferInfo = setInterval(() => {
             let current = this.video.currentTime;
+            let offset  = current - this.controller.presentation.startTime;
 
             if (this.video.buffered.length > 0) {
                 let last = this.video.buffered.end(0);
@@ -150,12 +151,13 @@ class Player {
                 avgSpeed *= 1000; // seconds
                 avgSpeed /= 1024; // kilobytes
 
-                console.log(`* time: ${current.toFixed(2)}, ` +
+                console.log(`\t time: ${current.toFixed(2)} ` +
+                            `(${offset.toFixed(2)}), ` +
                             `buffered: ${last.toFixed(2)}, ` +
                             `remaining: ${remaining.toFixed(2)}, ` +
                             `avg speed: ${avgSpeed.toFixed(2)}kbps`);
             } else {
-                console.log(`* time: ${current.toFixed(2)}, buffered: nil`);
+                console.log(`\t time: ${current.toFixed(2)}, buffered: nil`);
             }
         }, this.options.debugInterval * 1000);
 
@@ -221,7 +223,7 @@ class Player {
     }
 
     set duration(newDuration) {
-        this.mediaSource.duration = newDuration / 1000;
+        this.mediaSource.duration = newDuration;
         console.log('set video duration to', this.mediaSource.duration);
         this.emit('durationChange');
     }

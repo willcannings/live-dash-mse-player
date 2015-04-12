@@ -3,6 +3,7 @@ class PresentationController extends PlayerObject {
         this.player             = player;
         this.options            = player.options;
         this.state              = PresentationController.uninitialised;
+        this.timeBase           = performance.now();
 
         // source options
         this.hasAudio           = !player.options.ignoreAudio;
@@ -14,7 +15,17 @@ class PresentationController extends PlayerObject {
         this.presentation       = new Presentation(this);
         this.manifestURL        = player.options.url;
         this.manifestLoaded     = undefined;
-        this.nextStartTime      = undefined;
+
+        // segments
+        this.videoSegments = new SegmentWindow(
+            this.presentation.videoSource
+        );
+
+        this.audioSegments = new SegmentWindow(
+            this.presentation.audioSource
+        );
+
+        console.log(`presentation starting at ${this.timeBase}`);
     }
 
     setState(newState) {
@@ -25,8 +36,9 @@ class PresentationController extends PlayerObject {
 
         console.groupEnd();
         console.group();
+        let time = performance.now() - this.timeBase;
         console.log(
-            performance.now().toFixed(2),
+            time.toFixed(2),
             'state now:', PresentationController.states[newState]
         );
     }
@@ -46,7 +58,12 @@ class PresentationController extends PlayerObject {
         if (this.loadingManifest)
             return;
 
-        console.log('loading manifest from', this.options.url);
+        let time = performance.now() - this.timeBase;
+        console.log(
+            time.toFixed(2),
+            'loading manifest from', this.options.url
+        );
+
         this.downloader.getMPD(this.options.url, this.processor);
         this.loadingManifest = true;
     }
@@ -66,7 +83,7 @@ class PresentationController extends PlayerObject {
         this.presentation.updateManifest(manifest);
 
         if (this.state >= PresentationController.sourcesInitialised)
-            this.queueSegments();
+            this.updateSegmentWindows();
     }
 
     // ---------------------------
@@ -114,18 +131,19 @@ class PresentationController extends PlayerObject {
         let audioInitialised = true;
 
         if (this.hasAudio)
-            audioInitialised = presentation.audioSource.state ==
-                                                    Source.initialised;
+            audioInitialised =
+                    presentation.audioSource.state == Source.initialised;
+
         let allInitialised =
-            presentation.videoSource.state == Source.initialised &&
-            audioInitialised;
+                    presentation.videoSource.state == Source.initialised &&
+                    audioInitialised;
             
 
         if (!allInitialised)
             return;
 
         // queue segments to start buffering
-        this.queueSegments();
+        this.updateSegmentWindows();
 
         // transition
         this.setState(PresentationController.sourcesInitialised);
@@ -141,56 +159,10 @@ class PresentationController extends PlayerObject {
     // ---------------------------
     // buffering
     // ---------------------------
-    queueSegments() {
-        // move to live edge if required
-        let presentation = this.presentation;
-        let manifest = presentation.manifest;
-        let endTime = presentation.timeline.duration / 1000;
-        let startTime = this.nextStartTime || 0;
-
-        if (presentation.willStartAtLiveEdge) {
-            let available = manifest.availabilityStartTime;
-            let now = Date.now() / 1000;
-            let liveOffset = now - available;
-            endTime = liveOffset; // end buffering at live edge
-
-            if (this.nextStartTime == undefined) {
-                startTime = liveOffset;
-
-                // start some amount of time before the live edge. if the
-                // manifest specifies a duration, use it, otherwise as a
-                // heuristic move back half of the timeshift window + min
-                // buffer time, the manifest update period + 20% or just half
-                // the timeshift window otherwise
-
-                // ensure start doesn't fall outside the timeshift range
-                let timeshift = manifest.timeShiftBufferDepth / 1000;
-                let minStart = startTime - timeshift;
-
-                if (manifest.suggestedPresentationDelay) {
-                    startTime -= manifest.suggestedPresentationDelay / 1000;
-                } else {
-                    if (manifest.minBufferTime) {
-                        let bufferTime = manifest.minBufferTime / 1000;
-                        startTime -= (timeshift + bufferTime) / 2;
-                    } else if (manifest.minimumUpdatePeriod) {
-                        startTime -= (manifest.minimumUpdatePeriod / 1000) * 1.2;
-                    } else {
-                        startTime -= timeshift / 2;
-                    }
-                }
-
-                startTime = Math.max(startTime, minStart);
-                startTime = Math.max(startTime, 0);
-            }
-        }
-
-        this.nextStartTime = presentation.videoSource.queueSegments(startTime, endTime);
-
-        if (this.hasAudio) {
-            let audioEnd = presentation.audioSource.queueSegments(startTime, endTime);
-            this.nextStartTime = Math.min(this.nextStartTime, audioEnd);
-        }
+    updateSegmentWindows() {
+        this.videoSegments.update();
+        if (this.hasAudio)
+            this.audioSegments.update();
     }
 
     tick() {
@@ -199,6 +171,7 @@ class PresentationController extends PlayerObject {
         // reload the manifest if minimumUpdatePeriod has passed
         if (presentation.willReloadManifest) {
             let timeSinceManifest = performance.now() - this.manifestLoaded;
+            timeSinceManifest /= 1000; // seconds
             if (timeSinceManifest >= presentation.manifest.minimumUpdatePeriod)
                 this.loadManifest();
         }
@@ -210,17 +183,17 @@ class PresentationController extends PlayerObject {
         let bufferAvailable = true;
 
         // TODO: take into account source bitrate, current download conditions
-        let minBuffer = (presentation.manifest.minBufferTime / 1000);
+        let minBuffer = presentation.manifest.minBufferTime;
 
         if (videoRemaining < minBuffer) {
-            presentation.videoSource.downloadNextSegment();
+            this.videoSegments.downloadNextSegment();
             bufferAvailable = false;
         }
 
         if (this.hasAudio) {
             let audioRemaining = presentation.audioSource.bufferEnd - current;
             if (audioRemaining < minBuffer) {
-                presentation.audioSource.downloadNextSegment();
+                this.audioSegments.downloadNextSegment();
                 bufferAvailable = false;
             }
         }
@@ -229,6 +202,7 @@ class PresentationController extends PlayerObject {
             if (this.state == PresentationController.sourcesInitialised) {
                this.setState(PresentationController.bufferAvailable);
                video.currentTime = video.buffered.start(0);
+               presentation.startTime = video.currentTime;
                video.play();
            }
         }

@@ -143,17 +143,31 @@ class Timeline extends PlayerObject {
         }
     }
 
-    seek(time) {
-        let previousCurrent = this.currentInterval;
-        let newCurrent = this.intervals.find((interval) =>
-            (interval.start <= time) && (time < interval.end)
+    intervalAt(time) {
+        return this.intervals.find((interval) =>
+            (interval.start <= time) &&
+                ((time < interval.end) ||
+                (interval.end == undefined))
         );
+    }
 
-        if (previousCurrent != newCurrent) {
-            this.currentInterval = newCurrent;
-            previousCurrent.unseek();
-        }
 
-        this.currentInterval.seek(time);
+    // ---------------------------
+    // segments
+    // ---------------------------
+    videoSegmentAt(time) {
+        return this.intervalAt(time).videoContent.segmentAt(time);
+    }
+
+    audioSegmentAt(time) {
+        return this.intervalAt(time).audioContent.segmentAt(time);
+    }
+
+    videoSegmentsInRange(start, end) {
+        return this.intervalAt(start).videoContent.segmentsInRange(start, end);
+    }
+
+    audioSegmentsInRange(time) {
+        return this.intervalAt(start).audioContent.segmentsInRange(start, end);
     }
 };

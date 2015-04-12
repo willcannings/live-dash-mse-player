@@ -51,3 +51,10 @@ To enable MSE:
 ** [DASH-IF Live v0.9](http://dashif.org/w/2014/08/DASH-IF-live-v0.9.pdf)
 * DVB profiles:
 ** [DVB Dash A168](https://www.dvb.org/resources/public/standards/a168_dvb-dash.pdf)
+
+
+## Reference Clips
+
+* http://av-standard.irt.de/wiki/index.php/Referenzclips
+* http://azure.microsoft.com/blog/2014/10/07/live-247-reference-streams-available/
+* http://dashif.org/test-vectors/

@@ -12,6 +12,8 @@ class Presentation extends PlayerObject {
         this.videoSource    = new Source('video', this);
         this.audioSource    = new Source('audio', this);
         this.timeline       = new Timeline(this);
+        this.startTime      = undefined;
+        this.endTime        = undefined;
     }
 
     destruct() {
@@ -19,13 +21,20 @@ class Presentation extends PlayerObject {
         this.audioSource.destruct();
     }
 
-    seek(time) {
-        this.timeline.seek(time);
+    liveEdge() {
+        let available = this.manifest.availabilityStartTime;
+        let now = Date.now() / 1000;
+        return now - available;
     }
 
     updateManifest(manifest) {
         this.manifest = manifest;
         this.determineOperationMode();
+
+        // increase the presentation end time
+        if (this.operationMode >= Presentation.simpleLiveOperation)
+            this.endTime = this.liveEdge() + manifest.minimumUpdatePeriod;
+
         this.timeline.update();
 
         if (Number.isNaN(this.player.duration)) {

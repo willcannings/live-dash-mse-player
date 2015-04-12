@@ -17,13 +17,9 @@ class Interval extends PlayerObject {
         this.initialiseRepresentations(period);
     }
 
-    seek(time) {
-    }
-
-    unseek() {
-    }
-
     get end() {
+        if (this.duration == undefined)
+            return undefined;
         return this.start + this.duration;
     }
 

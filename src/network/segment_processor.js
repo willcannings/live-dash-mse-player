@@ -11,32 +11,42 @@ class Segment extends PlayerObject {
         this._url           = null;
     }
 
-    get start() {
-        return this.time / this.timescale;
-    }
 
-    get end() {
-        return (this.time + this.duration) / this.timescale;
-    }
-
+    // ---------------------------
+    // generators
+    // ---------------------------
     generateNext() {
         return new Segment(
             this.duration,
             this.number + 1,
             this.time + this.duration,
             this.timescale,
-            this.content,
-            this.availableTime
+            this.content
         );
     }
 
+    seekTo(time) {
+        let number = Math.floor((time * this.timescale) / this.duration);
+        return new Segment(
+            this.duration,
+            number,
+            number * this.duration,
+            this.timescale,
+            this.content
+        );
+    }
+
+    // ---------------------------
+    // attributes
+    // ---------------------------
     // lazily evaluate url so changes to currentRepresentation can apply
     url(memoise = false) {
         if (this._url)
             return this._url;
 
         let template = this.content.currentRepresentation.segmentTemplate;
-        let path = template.media.format(this.number, this.time);
+        let number = this.number + template.startNumber;
+        let path = template.media.format(number, this.time);
 
         let baseURL = this.content.source.presentation.manifest.base();
         let url = URI(path).absoluteTo(baseURL).toString();
@@ -53,9 +63,25 @@ class Segment extends PlayerObject {
 
     equal(other) {
         return this.duration == other.duration &&
-            (this.time == other.time || this.number == other.number);
+               this.time == other.time;
     }
 
+    get start() {
+        return this.time / this.timescale;
+    }
+
+    get end() {
+        return (this.time + this.duration) / this.timescale;
+    }
+
+    get durationSeconds() {
+        return this.duration / this.timescale;
+    }
+
+
+    // ---------------------------
+    // network callbacks
+    // ---------------------------
     error(xhr) {
         this.state = Segment.error;
         console.log('error loading segment', this._url, xhr);

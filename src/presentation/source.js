@@ -51,9 +51,14 @@ class Source extends PlayerObject {
                 segment.data = null;
 
                 // debug log
+                let filename = URI(segment.url()).filename();
                 let duration = segment.realEnd - segment.realStart;
-                console.log('loaded', this.contentType,
-                            'segment, added:', duration.toFixed(2));
+                let time = performance.now() - this.presentation.controller.timeBase;
+                console.log(time.toFixed(2),
+                            `loaded ${this.contentType}`,
+                            `segment ${filename}`,
+                            `added ${duration.toFixed(2)}s`
+                );
 
                 // remove it from the queue - we're done appending it
                 this.appendQueue.splice(0, 1);
@@ -99,75 +104,27 @@ class Source extends PlayerObject {
 
 
     // ---------------------------
-    // download queue
+    // segments
     // ---------------------------
-    queueSegments(startTime, endTime) {
-        console.log(this.contentType, 'queueing', startTime, endTime);
-        let segments = this.content.segmentsInRange(startTime, endTime);
-
-        if (segments.length == 0) {
-            console.warn(this.contentType, 'produced no segments between',
-                         startTime, endTime, this.content);
-            return;
-        } else {
-            let starts = [for (s of segments) s.start];
-            console.log('got', segments.length, starts.join(', '));
-        }
-
-        // segments and queuedSegments may share some segments. find the first
-        // new segment and append from there.
-        let queueLength = this.queuedSegments.length;
-        let lastQueued = this.queuedSegments[queueLength - 1];
-        let firstIndex = 0;
-
-        if (lastQueued) {
-            firstIndex = segments.findIndex((s) => s.equal(lastQueued));
-            if (firstIndex == -1 && lastQueued.end != segments[0].start)
-                console.error('no matching segments found after re-queue');
-
-            // start appending from the next segment
-            firstIndex += 1;
-        }
-
-        this.queuedSegments = this.queuedSegments.
-                                    concat(segments.slice(firstIndex));
-        console.log('queued', segments.length - firstIndex,
-                    this.contentType, 'new segments');
-
-        return segments[segments.length - 1].end;
+    segmentAt(time) {
+        if (this.video)
+            return this.presentation.timeline.videoSegmentAt(time);
+        else if (this.audio)
+            return this.presentation.timeline.audioSegmentAt(time);
     }
 
-    downloadNextSegment() {
-        let segment = this.queuedSegments[this.queueIndex];
-        if (segment == undefined) {
-            console.warn(this.contentType, 'queue has run empty 1', this.queueIndex, this.queuedSegments.length);
-            return;
-        }
+    segmentsInRange(start, end) {
+        if (this.video)
+            return this.presentation.timeline.videoSegmentsInRange(start, end);
+        else if (this.audio)
+            return this.presentation.timeline.audioSegmentsInRange(start, end);
+    }
 
-        if (segment.state == Segment.downloading)
-            return;
-
-        if (segment.state == Segment.downloaded ||
-            segment.state == Segment.error) {
-            if ((this.queueIndex + 1) == this.queuedSegments.length) {
-                console.warn(this.contentType, 'queue has run empty 2', this.queueIndex, this.queuedSegments.length);
-                return;
-            } else {
-                this.queueIndex += 1;
-                segment = this.queuedSegments[this.queueIndex];
-            }
-        }
-
-        // wait until the segment can be downloaded
-        if (!segment.available())
-            return;
-
-        // segment is pending, start to download
-        segment.state = Segment.downloading;
-        let url = segment.url(true);
-
-        this.presentation.controller.downloader.getMedia(url, segment);
-        console.log('downloading', this.contentType, 'segment', url);
+    contentAt(time) {
+        if (this.video)
+            return this.presentation.timeline.intervalAt(time).videoContent;
+        else
+            return this.presentation.timeline.intervalAt(time).audioContent;
     }
 
 

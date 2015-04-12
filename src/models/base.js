@@ -4,7 +4,7 @@
 // abstract model + parsing
 // --------------------------------------------------
 // scales used when parsing duration strings
-var SECONDS = 1000;             // xs:duration seconds
+var SECONDS = 1;                // xs:duration seconds
 var MINUTES = 60 * SECONDS;     // xs:duration minutes
 var HOURS   = 60 * MINUTES;     // xs:duration hours
 var DURATION_COMPONENTS = {
@@ -24,15 +24,15 @@ function duration(val) {
 
     // remove "PT" and match each component: count (H | M | S)
     let components = val.slice(2).match(/[\d\.]+[HMS]/g);
-    let milliseconds = 0;
+    let seconds = 0;
 
     components.forEach((component) => {
         let scale = DURATION_COMPONENTS[component.slice(-1)];
         let count = parseFloat(component.slice(0, -1));
-        milliseconds += count * scale;
+        seconds += count * scale;
     });
 
-    return milliseconds;
+    return seconds;
 }
 
 function bool(val) {

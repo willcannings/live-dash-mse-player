@@ -108,6 +108,10 @@ var staticMPDs = new Grouping('Static, fixed length', (grouping) => {
             "HbbTV 5min Demo",
             "http://akamai-progressive.irt.de/irt_dash_hbbtv_5min/video_format_switching_progressive.mpd"
         );
+        group.newLink(
+            "YouTube Demo - Car",
+            "http://yt-dash-mse-test.commondatastorage.googleapis.com/media/car-20120827-manifest.mpd"
+        );
     });
 });
 
