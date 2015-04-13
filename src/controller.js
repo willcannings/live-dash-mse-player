@@ -124,10 +124,12 @@ class PresentationController extends PlayerObject {
     }
 
     sourceInitialised() {
-        let presentation = this.presentation;
+        if (this.state != PresentationController.sourceBuffersCreated)
+            return;
 
         // wait until all sources are successfully initialised to prevent
         // downloading segments unnecessarily
+        let presentation = this.presentation;
         let audioInitialised = true;
 
         if (this.hasAudio)
@@ -137,7 +139,6 @@ class PresentationController extends PlayerObject {
         let allInitialised =
                     presentation.videoSource.state == Source.initialised &&
                     audioInitialised;
-            
 
         if (!allInitialised)
             return;
@@ -166,9 +167,8 @@ class PresentationController extends PlayerObject {
     }
 
     tick() {
-        let presentation = this.presentation;
-
         // reload the manifest if minimumUpdatePeriod has passed
+        let presentation = this.presentation;
         if (presentation.willReloadManifest) {
             let timeSinceManifest = performance.now() - this.manifestLoaded;
             timeSinceManifest /= 1000; // seconds

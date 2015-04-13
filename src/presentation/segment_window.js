@@ -176,6 +176,12 @@ class SegmentWindow extends PlayerObject {
                     'queue has run empty, last segment is downloaded'
                 );
 
+                // attempt to load more segments from the manifest. if the
+                // period uses a segment template or ends in a repeating
+                // segment, we can generate new segments from liveEdge to
+                // presentation end time.
+                
+
                 // if no new segments could be found in the existing manifest,
                 // try reloading the manifest early
                 console.log('no segments remain in manifest, reloading');

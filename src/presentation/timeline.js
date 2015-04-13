@@ -169,7 +169,7 @@ class Timeline extends PlayerObject {
         return this.intervalAt(start).videoContent.segmentsInRange(start, end);
     }
 
-    audioSegmentsInRange(time) {
+    audioSegmentsInRange(start, end) {
         return this.intervalAt(start).audioContent.segmentsInRange(start, end);
     }
 };

@@ -20,7 +20,7 @@
                 window.player = new Player({
                     url: linkObj.url,
                     element: $('#video-stream'),
-                    ignoreAudio: true,
+                    ignoreAudio: false,
                     showVideoEvents: false
                 });
             }
