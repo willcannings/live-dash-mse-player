@@ -82,6 +82,16 @@ class SegmentWindow extends PlayerObject {
             console.log(`queueing ${startDiff.toFixed(2)}s from live edge`);
         }
 
+        if (rangeEnd <= rangeStart)
+            console.log('already queued segments in live edge window',
+                `${rangeEnd.toFixed(2)} to ${rangeStart.toFixed(2)}`
+            );
+        else
+            this.queueSegments(rangeStart, rangeEnd, liveEdge)
+        console.groupEnd();
+    }
+
+    queueSegments(rangeStart, rangeEnd, liveEdge) {
         // grab the segments in the range and start to merge into the existing
         // segments list. the initial update will assign the first set of
         // segments to the list, subsequent updates are based on the end time
@@ -93,7 +103,6 @@ class SegmentWindow extends PlayerObject {
 
         if (newSegments.length == 0) {
             console.warn('no segments produced over this range');
-            console.groupEnd();
             return;
         }
 
@@ -133,8 +142,6 @@ class SegmentWindow extends PlayerObject {
             `segment(s) adding ${duration.toFixed(2)}s`,
             `window is now ${this.segments.length} wide`
         );
-        
-        console.groupEnd();
     }
 
 
@@ -142,12 +149,16 @@ class SegmentWindow extends PlayerObject {
     // segment management
     // ---------------------------
     downloadNextSegment() {
+        // ignore the call if fired before any segments have been added
         if (this.loadIndex == undefined)
             return;
 
-        let segment = this.segments[this.loadIndex];
+        let presentation = this.presentation;
+        let controller = presentation.controller;
+        let liveEdge = presentation.liveEdge();
 
         // if the segment is downloading, allow it to continue
+        let segment = this.segments[this.loadIndex];
         if (segment.state == Segment.downloading)
             return;
 
@@ -156,21 +167,21 @@ class SegmentWindow extends PlayerObject {
         if (segment.state >= Segment.downloaded) {
 
             // if this is the last segment in the queue...
-            if ((this.loadIndex + 1) == this.segments.length) {
+            if (this.atLastSegment()) {
                 // the last segment may be the last segment available in the
                 // presentation. don't perform any processing in this case.
-                let duration = this.presentation.timeline.duration;
+                let duration = presentation.timeline.duration;
                 if (duration && segment.end >= duration)
                     return;
 
                 // if we're already attempting to load new segments, allow the
                 // manifest re-load to continue
-                let controller = this.presentation.controller;
                 if (controller.loadingManifest)
                     return;
 
                 // debug info
                 let time = performance.now() - controller.timeBase;
+                console.group();
                 console.warn(
                     time.toFixed(2), this.source.contentType,
                     'queue has run empty, last segment is downloaded'
@@ -178,26 +189,34 @@ class SegmentWindow extends PlayerObject {
 
                 // attempt to load more segments from the manifest. if the
                 // period uses a segment template or ends in a repeating
-                // segment, we can generate new segments from liveEdge to
+                // segment we can generate new segments from liveEdge to
                 // presentation end time.
-                
+                this.queueSegments(
+                    this.nextRangeStart,
+                    presentation.endTime,
+                    liveEdge
+                );
 
                 // if no new segments could be found in the existing manifest,
                 // try reloading the manifest early
-                console.log('no segments remain in manifest, reloading');
-                this.presentation.controller.loadManifest();
-                return;
+                if (this.atLastSegment()) {
+                    console.log('no segments remain in manifest, reloading');
+                    console.groupEnd();
+                    controller.loadManifest();
+                    return;
+                } else {
+                    console.groupEnd();
+                }
+            }
 
             // otherwise we can cleanly move to the next segment in the queue
-            } else {
-                this.loadIndex += 1;
-                segment = this.segments[this.loadIndex];
-            }
+            this.loadIndex += 1;
+            segment = this.segments[this.loadIndex];
         }
 
         // wait until the segment can be downloaded
         if (!segment.available()) {
-            let remaining = segment.end - this.presentation.liveEdge();
+            let remaining = segment.end - liveEdge;
             console.log(`segment isnt available yet ${remaining.toFixed(2)}s to go`);
             return;
         }
@@ -208,13 +227,11 @@ class SegmentWindow extends PlayerObject {
         // cache the url, this locks it to the current representation
         let url = segment.url(true);
 
-        this.presentation.controller.downloader.getMedia(url, segment);
+        controller.downloader.getMedia(url, segment);
         console.log('downloading', this.source.contentType, 'segment', url);
     }
 
-    undownloadedSegmentsRemaining() {
-        this.segments.length - this.loadIndex - 1;
+    atLastSegment() {
+        return this.loadIndex == (this.segments.length - 1);
     }
-
-
 };
