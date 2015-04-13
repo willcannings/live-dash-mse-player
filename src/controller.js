@@ -182,6 +182,14 @@ class PresentationController extends PlayerObject {
         let videoRemaining = presentation.videoSource.bufferEnd - current;
         let bufferAvailable = true;
 
+        // update current times and remove old segments if presentation is live
+        this.videoSegments.time = current;
+        this.videoSegments.truncate();
+        if (this.hasAudio) {
+            this.audioSegments.time = current;
+            this.audioSegments.truncate();
+        }
+
         // TODO: take into account source bitrate, current download conditions
         let minBuffer = presentation.manifest.minBufferTime;
 

@@ -5,6 +5,7 @@ class SegmentWindow extends PlayerObject {
         this.timeline       = source.presentation.timeline;
 
         this.segments       = [];
+        this.currentTime    = undefined;
         this.playIndex      = undefined;
         this.loadIndex      = undefined;
         this.nextRangeStart = undefined;
@@ -246,5 +247,60 @@ class SegmentWindow extends PlayerObject {
 
     atLastSegment() {
         return this.loadIndex == (this.segments.length - 1);
+    }
+
+    set time(newTime) {
+        this.currentTime = newTime;
+
+        // skip the search if the current segment still covers newTime
+        if (this.playIndex != undefined) {
+            let segment = this.segments[this.playIndex];
+            if (segment.start <= newTime && segment.end > newTime)
+                return;
+        }
+        
+        // otherwise search for the segment; perform a search here for now
+        // rather than anything more intelligent as we may have queued non
+        // contiguous segments if the user skips to different time points
+        // so simply incrementing to the next segment may not be enough
+        this.playIndex = undefined;
+
+        for (let i = 0; i < this.segments.length; i++) {
+            let segment = this.segments[i];
+            if (segment.start <= newTime && segment.end > newTime) {
+                this.playIndex = i;
+                return;
+            }
+        }
+    }
+
+    truncate() {
+        // keep the segment preceding the current segment and beyond. remove
+        // the remainder. truncate is called regularly, so will generally
+        // remove one segment at a time from the buffer.
+        // TODO: keep up to timeshift window if noTimeshift is false
+
+        // static presentations don't have segments removed
+        if (this.presentation.willStartAtBeginning)
+            return;
+
+        // when the current segment is the 3rd segment or more there is at
+        // least one segment to remove
+        if (this.playIndex == undefined || this.playIndex < 2)
+            return;
+
+        // remove the first segment to the preceding segment
+        let removed = this.segments.splice(0, this.playIndex - 1);
+        let count = removed.length;
+
+        // update the indexes now segments have been removed
+        this.playIndex -= count;
+        this.loadIndex -= count;
+
+        // remove each segment from the source's buffer. do this one by one to
+        // handle non contiguous segments (rather than first.start - last.end)
+        console.log(`truncating ${count} ${this.source.contentType} segments`);
+        for (let segment of removed)
+            this.source.removeSegment(segment);
     }
 };

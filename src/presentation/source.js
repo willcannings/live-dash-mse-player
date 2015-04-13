@@ -86,12 +86,14 @@ class Source extends PlayerObject {
             this._appendNextSegment();
     }
 
-    appendInitFile(data) {
-        this.buffer.appendBuffer(new Uint8Array(data));
+    removeSegment(segment) {
+        console.log(`deleting ${segment.start.toFixed(2)} to`,
+                    `${segment.end.toFixed(2)} in ${this.contentType} buffer`);
+        this.buffer.remove(segment.start, segment.end);
     }
 
-    truncateBuffer() {
-
+    appendInitFile(data) {
+        this.buffer.appendBuffer(new Uint8Array(data));
     }
 
     loadInitFile() {
