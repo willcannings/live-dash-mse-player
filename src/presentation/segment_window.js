@@ -154,13 +154,35 @@ class SegmentWindow extends PlayerObject {
         // if the segment is downloaded (or errored) attempt to move to the
         // next segment for downloading
         if (segment.state >= Segment.downloaded) {
+
+            // if this is the last segment in the queue...
             if ((this.loadIndex + 1) == this.segments.length) {
+                // the last segment may be the last segment available in the
+                // presentation. don't perform any processing in this case.
+                let duration = this.presentation.timeline.duration;
+                if (duration && segment.end >= duration)
+                    return;
+
+                // if we're already attempting to load new segments, allow the
+                // manifest re-load to continue
+                let controller = this.presentation.controller;
+                if (controller.loadingManifest)
+                    return;
+
+                // debug info
+                let time = performance.now() - controller.timeBase;
                 console.warn(
-                    performance.now() - this.presentation.controller.timeBase,
-                    this.source.contentType,
+                    time.toFixed(2), this.source.contentType,
                     'queue has run empty, last segment is downloaded'
                 );
+
+                // if no new segments could be found in the existing manifest,
+                // try reloading the manifest early
+                console.log('no segments remain in manifest, reloading');
+                this.presentation.controller.loadManifest();
                 return;
+
+            // otherwise we can cleanly move to the next segment in the queue
             } else {
                 this.loadIndex += 1;
                 segment = this.segments[this.loadIndex];

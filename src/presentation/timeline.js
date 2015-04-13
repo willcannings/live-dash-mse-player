@@ -15,14 +15,16 @@ class Timeline extends PlayerObject {
         let periods = this.presentation.manifest.periods;
 
         // ensure all periods in dynamic manifests have ids. these are used to
-        // match periods in different manifests reloads.
+        // match periods in different manifests reloads. if some periods are
+        // missing an id, procede on the assumption only one period will exist.
         if (this.presentation.willReloadManifest) {
             let anyMissingID = periods.some((period) =>
                 period.id == undefined
             );
 
             if (anyMissingID)
-                throw 'some periods in dynamic manifest are missing an id';
+                console.warn('some periods in dynamic manifest are missing an id',
+                    'proceding on the assumption only one period exists.');
         }
 
         // updating the set of periods involves removing periods that no longer
