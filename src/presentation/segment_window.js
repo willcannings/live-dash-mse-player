@@ -48,7 +48,7 @@ class SegmentWindow extends PlayerObject {
         if (rangeStart == undefined) {
             // because of slight timing differences, the edge segment may not
             // always be found. try and use the last available timeline segment
-            // if it makes sense, or change the search to the pres. end time.
+            // if possible, or change the search to the presentation end time.
             if (!edgeSegment) {
                 let content = this.source.contentAt(liveEdge);
                 if (content.repeatSegment) {
@@ -71,23 +71,33 @@ class SegmentWindow extends PlayerObject {
                 rangeStart -= manifest.suggestedPresentationDelay;
 
             // otherwise use the timeshift buffer to determine the start time
+            // divide the timeshift in half as a heuristic so we're not too
+            // far off the actual live edge
             } else {
                 rangeStart -= timeshift / 2;
             }
 
             // ensure rangeStart falls on a valid segment
-            rangeStart = Math.max(rangeStart, minStart);    // time >= now - timeshift
-            rangeStart = Math.max(rangeStart, 0);           // time >= 0
+            rangeStart = Math.max(rangeStart, minStart);    // start >= now - timeshift
+            rangeStart = Math.max(rangeStart, 0);           // start >= 0
             let startDiff = liveEdge - rangeStart;
             console.log(`queueing ${startDiff.toFixed(2)}s from live edge`);
         }
 
-        if (rangeEnd <= rangeStart)
+        // if queueSegments was called before a manifest reload, and extra
+        // segments were available to be queued (either repeating segments
+        // or extra segments in a timeline) we've already queued segments
+        // after the old live edge. rather than adding new segments here,
+        // the manifest reload has extended the presentation end time, which
+        // helps in future calls to queueSegments.
+        if (rangeEnd <= rangeStart) {
             console.log('already queued segments in live edge window',
                 `${rangeEnd.toFixed(2)} to ${rangeStart.toFixed(2)}`
             );
-        else
+        } else {
             this.queueSegments(rangeStart, rangeEnd, liveEdge)
+        }
+
         console.groupEnd();
     }
 
@@ -149,7 +159,8 @@ class SegmentWindow extends PlayerObject {
     // segment management
     // ---------------------------
     downloadNextSegment() {
-        // ignore the call if fired before any segments have been added
+        // ignore the call if fired before any segments have been added to the
+        // segment download queue
         if (this.loadIndex == undefined)
             return;
 
@@ -190,7 +201,7 @@ class SegmentWindow extends PlayerObject {
                 // attempt to load more segments from the manifest. if the
                 // period uses a segment template or ends in a repeating
                 // segment we can generate new segments from liveEdge to
-                // presentation end time.
+                // the presentation end time.
                 this.queueSegments(
                     this.nextRangeStart,
                     presentation.endTime,
@@ -209,7 +220,8 @@ class SegmentWindow extends PlayerObject {
                 }
             }
 
-            // otherwise we can cleanly move to the next segment in the queue
+            // we can cleanly move to the next segment in the queue - either
+            // one already existed, or one was just added above
             this.loadIndex += 1;
             segment = this.segments[this.loadIndex];
         }
@@ -217,7 +229,8 @@ class SegmentWindow extends PlayerObject {
         // wait until the segment can be downloaded
         if (!segment.available()) {
             let remaining = segment.end - liveEdge;
-            console.log(`segment isnt available yet ${remaining.toFixed(2)}s to go`);
+            console.log(`next segment isnt available yet`,
+                        `${remaining.toFixed(2)}s to go`);
             return;
         }
 

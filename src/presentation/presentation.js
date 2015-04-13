@@ -21,6 +21,10 @@ class Presentation extends PlayerObject {
         this.audioSource.destruct();
     }
 
+    // seconds since the start of the presentation. liveEdge == 0 is the start
+    // of the presentation. the live edge is used when calculating the time
+    // segments become available for download, and when determining the time
+    // ranges to use when queueing segments
     liveEdge() {
         let available = this.manifest.availabilityStartTime;
         let now = Date.now() / 1000;

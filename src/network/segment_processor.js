@@ -14,6 +14,8 @@ class Segment extends PlayerObject {
     // ---------------------------
     // generators
     // ---------------------------
+    // assuming this is a repeating segment, produce the segment immediately
+    // following this segment
     generateNext() {
         return new Segment(
             this.duration,
@@ -24,6 +26,8 @@ class Segment extends PlayerObject {
         );
     }
 
+    // assuming this is a repeating segment, produce the segment that contains
+    // 'time' in its interval (start inclusive, end non inclusive)
     seekTo(time) {
         let number = Math.floor((time * this.timescale) / this.duration);
         return new Segment(
