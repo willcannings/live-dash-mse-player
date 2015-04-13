@@ -27,6 +27,10 @@ class Presentation extends PlayerObject {
         return now - available;
     }
 
+    hasAvailabilityStartTime() {
+        return this.manifest.availabilityStartTime != undefined;
+    }
+
     updateManifest(manifest) {
         this.manifest = manifest;
         this.determineOperationMode();

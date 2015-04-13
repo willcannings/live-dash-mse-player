@@ -1,11 +1,10 @@
 class Segment extends PlayerObject {
-    constructor(duration, number, time, timescale, content, availableTime) {
+    constructor(duration, number, time, timescale, content) {
         this.duration       = duration;
         this.number         = number;
         this.time           = time;
         this.timescale      = timescale;
         this.content        = content;
-        this.availableTime  = availableTime;
 
         this.state          = Segment.pending;
         this._url           = null;
@@ -57,8 +56,16 @@ class Segment extends PlayerObject {
     }
 
     available() {
-        if (this.availableTime == undefined)
+        let presentation = this.content.source.presentation;
+
+        // all presentations, including static, may have an availability time
+        if (!presentation.hasAvailabilityStartTime())
             return true;
+
+        // live edge is 0 when current time == availability time. the segment
+        // will become available once its duration is complete, i.e the first
+        // segment can't be accessed until it's recorded
+        return presentation.liveEdge() >= this.end;
     }
 
     equal(other) {

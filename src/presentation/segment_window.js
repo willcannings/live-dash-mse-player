@@ -7,7 +7,7 @@ class SegmentWindow extends PlayerObject {
         this.segments       = [];
         this.playIndex      = undefined;
         this.loadIndex      = undefined;
-        this.nextRangeStart = -1;
+        this.nextRangeStart = undefined;
     }
 
     // ---------------------------
@@ -33,10 +33,9 @@ class SegmentWindow extends PlayerObject {
     // called every time the manifest is loaded
     updateDynamic() {
         console.group();
-        console.log(
-            'updating', this.source.contentType,
-            'segments from', this.nextRangeStart.toFixed(2)
-        );
+        console.log(`updating ${this.source.contentType} segments`);
+        if (this.nextRangeStart != undefined)
+            console.log(`from ${this.nextRangeStart.toFixed(2)}`);
 
         // add segments from the end of the last segment to the new live edge
         let liveEdge = this.presentation.liveEdge();
@@ -46,7 +45,7 @@ class SegmentWindow extends PlayerObject {
 
         // if no segments have ever been added, choose a start based on the
         // live edge, moving back a little to help ensure continuous streaming
-        if (rangeStart == -1) {
+        if (rangeStart == undefined) {
             // because of slight timing differences, the edge segment may not
             // always be found. try and use the last available timeline segment
             // if it makes sense, or change the search to the pres. end time.
@@ -80,15 +79,16 @@ class SegmentWindow extends PlayerObject {
             rangeStart = Math.max(rangeStart, minStart);    // time >= now - timeshift
             rangeStart = Math.max(rangeStart, 0);           // time >= 0
             let startDiff = liveEdge - rangeStart;
-            console.log('starting', startDiff.toFixed(2), 'from live edge');
-        }        
+            console.log(`queueing ${startDiff.toFixed(2)}s from live edge`);
+        }
 
         // grab the segments in the range and start to merge into the existing
         // segments list. the initial update will assign the first set of
         // segments to the list, subsequent updates are based on the end time
         // of the last segment added previously, so no overlaps should occur
         // other than the last and first new segments being equal.
-        console.log('queueing', rangeStart.toFixed(2), rangeEnd.toFixed(2));
+        console.log(`queueing ${rangeStart.toFixed(2)} to`,
+                    `${rangeEnd.toFixed(2)}`);
         let newSegments = this.source.segmentsInRange(rangeStart, rangeEnd);
 
         if (newSegments.length == 0) {
@@ -97,9 +97,11 @@ class SegmentWindow extends PlayerObject {
             return;
         }
 
-        console.log(`got ${newSegments.length} segment(s), starting `,
-            newSegments[0].start.toFixed(2),
-            newSegments[newSegments.length - 1].end.toFixed(2)
+        let startOffset = liveEdge - newSegments[0].start;
+        console.log(`got ${newSegments.length} segment(s), starting`,
+            newSegments[0].start.toFixed(2), 'ending',
+            newSegments[newSegments.length - 1].end.toFixed(2),
+            `, ${startOffset.toFixed(2)}s from live edge` 
         );
 
         if (this.segments.length > 0) {
@@ -127,8 +129,9 @@ class SegmentWindow extends PlayerObject {
 
         let time = performance.now() - this.presentation.controller.timeBase;
         console.log(time.toFixed(2),
-            `queued ${newSegments.length} ${this.source.contentType} ` +
-            `segment(s) adding ${duration.toFixed(2)}s`
+            `queued ${newSegments.length} ${this.source.contentType}`,
+            `segment(s) adding ${duration.toFixed(2)}s`,
+            `window is now ${this.segments.length} wide`
         );
         
         console.groupEnd();
@@ -165,8 +168,11 @@ class SegmentWindow extends PlayerObject {
         }
 
         // wait until the segment can be downloaded
-        if (!segment.available())
+        if (!segment.available()) {
+            let remaining = segment.end - this.presentation.liveEdge();
+            console.log(`segment isnt available yet ${remaining.toFixed(2)}s to go`);
             return;
+        }
 
         // only remaining segment state is pending. start to download.
         segment.state = Segment.downloading;
