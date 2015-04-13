@@ -280,16 +280,16 @@ class SegmentWindow extends PlayerObject {
         // remove one segment at a time from the buffer.
         // TODO: keep up to timeshift window if noTimeshift is false
 
-        // static presentations don't have segments removed
+        // static presentations aren't truncated
         if (this.presentation.willStartAtBeginning)
             return;
 
-        // when the current segment is the 3rd segment or more there is at
+        // when the current segment is the 3rd segment or higher there is at
         // least one segment to remove
         if (this.playIndex == undefined || this.playIndex < 2)
             return;
 
-        // remove the first segment to the preceding segment
+        // remove the first segment to the segment before the current segment
         let removed = this.segments.splice(0, this.playIndex - 1);
         let count = removed.length;
 

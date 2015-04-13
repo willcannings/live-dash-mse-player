@@ -57,7 +57,7 @@ gulp.task('dev:styles', function () {
 });
 
 // use babel to transpile ES6 > ES5
-gulp.task('dev:js', function () {
+gulp.task('js', function () {
     return gulp.src(paths.js)
         .pipe(sourcemaps.init())
             .pipe(babel({
@@ -71,7 +71,7 @@ gulp.task('dev:js', function () {
 // watch for changes to html and images and reload
 // changes to js will be compiled but won't reload
 gulp.task('watch', function() {
-    gulp.watch(paths.js, ['dev:js']);
+    gulp.watch(paths.js, ['js']);
     gulp.watch(paths.html, reload);
     gulp.watch(paths.images, reload);
 });
@@ -79,8 +79,6 @@ gulp.task('watch', function() {
 // watch files for changes & reload
 gulp.task('browser-sync', function () {
     var baseDirs = ['dist', '.tmp', 'demo', 'bower_components', 'node_modules'];
-    //var indexPath = path.join(__dirname, 'demo', 'player.html');
-
     browserSync.init([paths.css], {
         notify: false,
         port: 7000,
@@ -88,12 +86,12 @@ gulp.task('browser-sync', function () {
         host: '0.0.0.0',
         server: {
             baseDir: baseDirs,
-            index: 'present.html',
+            index: 'index.html',
         }
     });
 });
 
-gulp.task('serve', ['dev:js', 'dev:styles', 'watch', 'browser-sync']);
+gulp.task('serve', ['js', 'dev:styles', 'watch', 'browser-sync']);
 
 
 // -------------------------------------------
@@ -101,3 +99,5 @@ gulp.task('serve', ['dev:js', 'dev:styles', 'watch', 'browser-sync']);
 // -------------------------------------------
 // clean output directory
 gulp.task('clean', del.bind(null, ['.tmp', 'dist']));
+
+gulp.task('default', ['js']);
