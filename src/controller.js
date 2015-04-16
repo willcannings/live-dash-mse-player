@@ -68,18 +68,20 @@ class PresentationController extends PlayerObject {
         this.loadingManifest = true;
     }
 
+    resetManifestLoading() {
+        // dynamic manifests to be reloaded at manifestLoaded +
+        // manifest.minimumUpdatePeriod
+        this.manifestLoaded = performance.now();
+        this.loadingManifest = false;
+    }
+
     loadedManifest(manifest) {
         if (this.state == PresentationController.uninitialised)
             this.setState(PresentationController.firstMPDLoaded);
 
-        // dynamic manifests to be reloaded at manifestLoaded +
-        // manifest.minimumUpdatePeriod
-        this.manifestLoaded = performance.now();
-        console.log('loaded manifest', manifest);
-        this.loadingManifest = false;
-
         // add the manifest to the presentation. presentation will process
         // the manifest and add/remove intervals as required
+        console.log('loaded manifest', manifest);
         this.presentation.updateManifest(manifest);
 
         if (this.state >= PresentationController.sourcesInitialised)

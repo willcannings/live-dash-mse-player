@@ -15,17 +15,22 @@ class MPDProcessor extends RequestProcessor {
     }
 
     success(xhr) {
+        let controller = this.controller;
+
         // re-attempt download if an mpd response is empty
-        if (this.emptyResponse(xhr))
+        if (this.emptyResponse(xhr)) {
+            controller.resetManifestLoading();
             return;
+        }
 
         // ensure the mpd appears valid before parsing
         let mpds = xhr.responseXML.getElementsByTagName('MPD');
-        if (this.invalidResponse(mpds))
+        if (this.invalidResponse(mpds)) {
+            controller.resetManifestLoading();
             return;
+        }
 
         // mpd appears valid, reset reloadAttempts for future requests
-        let controller = this.controller;
         this.reloadAttempts = 0;
 
         // parse the manifest; the presentation and child objects will add/
