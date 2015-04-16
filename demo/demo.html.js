@@ -21,7 +21,8 @@
                     url: linkObj.url,
                     element: $('#video-stream'),
                     ignoreAudio: false,
-                    showVideoEvents: false
+                    showVideoEvents: false,
+                    chromeDOMFixInterval: 60
                 });
             }
         }
