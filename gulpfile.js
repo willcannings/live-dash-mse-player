@@ -57,7 +57,7 @@ gulp.task('dev:styles', function () {
 });
 
 // use babel to transpile ES6 > ES5
-gulp.task('js', function () {
+gulp.task('dev:js', function () {
     return gulp.src(paths.js)
         .pipe(sourcemaps.init())
             .pipe(babel({
@@ -65,20 +65,20 @@ gulp.task('js', function () {
                 optional: 'es7.comprehensions'
             }))
         .pipe(sourcemaps.write('.'))
-        .pipe(gulp.dest('dist'));
+        .pipe(gulp.dest('.tmp'));
 });
 
 // watch for changes to html and images and reload
 // changes to js will be compiled but won't reload
 gulp.task('watch', function() {
-    gulp.watch(paths.js, ['js']);
+    gulp.watch(paths.js, ['dev:js']);
     gulp.watch(paths.html, reload);
     gulp.watch(paths.images, reload);
 });
 
 // watch files for changes & reload
 gulp.task('browser-sync', function () {
-    var baseDirs = ['dist', '.tmp', 'demo', 'bower_components', 'node_modules'];
+    var baseDirs = ['.tmp', 'demo', 'bower_components', 'node_modules'];
     browserSync.init([paths.css], {
         notify: false,
         port: 7000,
@@ -91,7 +91,7 @@ gulp.task('browser-sync', function () {
     });
 });
 
-gulp.task('serve', ['js', 'dev:styles', 'watch', 'browser-sync']);
+gulp.task('serve', ['dev:js', 'dev:styles', 'watch', 'browser-sync']);
 
 
 // -------------------------------------------
@@ -100,4 +100,13 @@ gulp.task('serve', ['js', 'dev:styles', 'watch', 'browser-sync']);
 // clean output directory
 gulp.task('clean', del.bind(null, ['.tmp', 'dist']));
 
-gulp.task('default', ['js']);
+gulp.task('prod:js', function () {
+    return gulp.src(paths.js)
+        .pipe(babel({
+            modules: 'ignore',
+            optional: 'es7.comprehensions'
+        }))
+        .pipe(gulp.dest('dist'));
+});
+
+gulp.task('default', ['prod:js']);
