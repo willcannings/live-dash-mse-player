@@ -25,7 +25,9 @@ class Player {
             noTimeshift: false,             // true if live streams won't rewind
             ignoreAudio: false,             // skip audio source when true
 
-            maxDownloadHistory: 100         // max number of recent requests to cache
+            maxDownloadHistory: 100,        // max number of recent requests to cache
+
+            chromeDOMFixInterval: 0         // seconds; when > 0 add DOM elements to fix Chrome bug
         }, opts);
 
         if (!this.options.url)
@@ -129,6 +131,39 @@ class Player {
 
 
         // ---------------------------
+        // chrome fix
+        // ---------------------------
+        // when playing a live stream for a long time (10+hrs) a bug in Chrome
+        // 41+ causes repaints of the video element to stop. video.currenTime
+        // continues to increase, and so does webkitDecodedFrameCount. A 'fix'
+        // is to jiggle the DOM by adding a sibling element and positioning it,
+        // before removing it again later.
+        if (this.options.chromeDOMFixInterval > 0) {
+            this.chromeDOMInterval = setInterval(() => {
+                // create a simple, positioned element
+                let element = document.createElement('div');
+                element.style.cssText = `
+                    position: absolute;
+                    top: 0px;
+                    left: 0px;
+                    width: 100%;
+                    height: 100%;
+                `;
+
+                // add the element to the DOM to re-start video paints. remove
+                // the element after a second as it's not needed
+                console.log('adding empty element to restart Chrome paints');
+                document.body.appendChild(element);
+                setTimeout(() => {
+                    console.log('removing element, paints should be running');
+                    document.body.removeChild(element);
+                }, 1000);
+
+            }, this.options.chromeDOMFixInterval * 1000);
+        }
+
+
+        // ---------------------------
         // controller
         // ---------------------------
         // instantiate the controller after the video element
@@ -167,6 +202,8 @@ class Player {
         this.mediaSource = null;
 
         // clear timers
+        if (this.chromeDOMInterval)
+            clearInterval(this.chromeDOMInterval);
         clearTimeout(this.playbackTimer);
         clearInterval(this.bufferInfo);
 
