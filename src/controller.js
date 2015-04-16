@@ -38,8 +38,8 @@ class PresentationController extends PlayerObject {
         console.group();
         let time = performance.now() - this.timeBase;
         console.log(
-            time.toFixed(2),
-            'state now:', PresentationController.states[newState]
+            `${time.toFixed(2)} ` +
+            `state now: ${PresentationController.states[newState]}`
         );
     }
 
@@ -60,8 +60,7 @@ class PresentationController extends PlayerObject {
 
         let time = performance.now() - this.timeBase;
         console.log(
-            time.toFixed(2),
-            'loading manifest from', this.options.url
+            `${time.toFixed(2)} loading manifest from ${this.options.url}`
         );
 
         this.downloader.getMPD(this.options.url, this.processor);
@@ -81,7 +80,7 @@ class PresentationController extends PlayerObject {
 
         // add the manifest to the presentation. presentation will process
         // the manifest and add/remove intervals as required
-        console.log('loaded manifest', manifest);
+        console.log(`${this.manifestLoaded.toFixed(2)} loaded manifest`);
         this.presentation.updateManifest(manifest);
 
         if (this.state >= PresentationController.sourcesInitialised)
@@ -110,17 +109,17 @@ class PresentationController extends PlayerObject {
         // source's buffer before any content segments are appended
         videoSource.loadInitFile();
         console.log(
-            'starting', videoSource.contentType,
-            'with bandwidth:', videoSource.bandwidth,
-            'width:', videoSource.width,
-            'height:', videoSource.height
+            `starting ${videoSource.contentType} ` +
+            `with bandwidth: ${videoSource.bandwidth} ` +
+            `width: ${videoSource.width} ` +
+            `height: ${videoSource.height}`
         );
 
         if (this.hasAudio) {
             audioSource.loadInitFile();
             console.log(
-                'starting', audioSource.contentType,
-                'with bandwidth:', audioSource.bandwidth
+                `starting ${audioSource.contentType} ` +
+                `with bandwidth: ${audioSource.bandwidth}`
             );
         }
     }

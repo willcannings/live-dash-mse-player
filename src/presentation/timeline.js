@@ -23,8 +23,9 @@ class Timeline extends PlayerObject {
             );
 
             if (anyMissingID)
-                console.warn('some periods in dynamic manifest are missing an id',
-                    'proceding on the assumption only one period exists.');
+                console.warn('some periods in dynamic manifest are missing ' +
+                    'an id, proceding on the assumption only one period exists'
+                );
         }
 
         // updating the set of periods involves removing periods that no longer

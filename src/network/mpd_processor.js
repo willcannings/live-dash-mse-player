@@ -36,6 +36,7 @@ class MPDProcessor extends RequestProcessor {
         // parse the manifest; the presentation and child objects will add/
         // remove periods and segments as required
         let manifest = new Manifest(mpds[0], controller.manifestURL);
+        controller.resetManifestLoading();
         controller.loadedManifest(manifest);
     }
 

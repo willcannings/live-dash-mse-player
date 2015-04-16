@@ -92,8 +92,8 @@ class SegmentWindow extends PlayerObject {
         // the manifest reload has extended the presentation end time, which
         // helps in future calls to queueSegments.
         if (rangeEnd <= rangeStart) {
-            console.log('already queued segments in live edge window',
-                `${rangeEnd.toFixed(2)} to ${rangeStart.toFixed(2)}`
+            console.log(`already queued segments in live edge window ` +
+                        `${rangeEnd.toFixed(2)} to ${rangeStart.toFixed(2)}`
             );
         } else {
             this.queueSegments(rangeStart, rangeEnd, liveEdge)
@@ -108,7 +108,7 @@ class SegmentWindow extends PlayerObject {
         // segments to the list, subsequent updates are based on the end time
         // of the last segment added previously, so no overlaps should occur
         // other than the last and first new segments being equal.
-        console.log(`queueing ${rangeStart.toFixed(2)} to`,
+        console.log(`queueing ${rangeStart.toFixed(2)} to ` +
                     `${rangeEnd.toFixed(2)}`);
         let newSegments = this.source.segmentsInRange(rangeStart, rangeEnd);
 
@@ -118,10 +118,10 @@ class SegmentWindow extends PlayerObject {
         }
 
         let startOffset = liveEdge - newSegments[0].start;
-        console.log(`got ${newSegments.length} segment(s), starting`,
-            newSegments[0].start.toFixed(2), 'ending',
-            newSegments[newSegments.length - 1].end.toFixed(2),
-            `, ${startOffset.toFixed(2)}s from live edge` 
+        console.log(`got ${newSegments.length} segment(s), starting ` +
+            `${newSegments[0].start.toFixed(2)} ending ` +
+            `${newSegments[newSegments.length - 1].end.toFixed(2)}, ` +
+            `${startOffset.toFixed(2)}s from live edge` 
         );
 
         if (this.segments.length > 0) {
@@ -148,9 +148,9 @@ class SegmentWindow extends PlayerObject {
             duration += segment.durationSeconds;
 
         let time = performance.now() - this.presentation.controller.timeBase;
-        console.log(time.toFixed(2),
-            `queued ${newSegments.length} ${this.source.contentType}`,
-            `segment(s) adding ${duration.toFixed(2)}s`,
+        console.log(`${time.toFixed(2)} ` +
+            `queued ${newSegments.length} ${this.source.contentType} ` +
+            `segment(s) adding ${duration.toFixed(2)}s ` +
             `window is now ${this.segments.length} wide`
         );
     }
@@ -195,8 +195,8 @@ class SegmentWindow extends PlayerObject {
                 let time = performance.now() - controller.timeBase;
                 console.group();
                 console.warn(
-                    time.toFixed(2), this.source.contentType,
-                    'queue has run empty, last segment is downloaded'
+                    `${time.toFixed(2)} ${this.source.contentType} ` +
+                    `queue has run empty, last segment is downloaded`
                 );
 
                 // attempt to load more segments from the manifest. if the
@@ -230,7 +230,7 @@ class SegmentWindow extends PlayerObject {
         // wait until the segment can be downloaded
         if (!segment.available()) {
             let remaining = segment.end - liveEdge;
-            console.log(`next segment isnt available yet`,
+            console.log(`next segment isnt available yet ` +
                         `${remaining.toFixed(2)}s to go`);
             return;
         }
@@ -242,7 +242,7 @@ class SegmentWindow extends PlayerObject {
         let url = segment.url(true);
 
         controller.downloader.getMedia(url, segment);
-        console.log('downloading', this.source.contentType, 'segment', url);
+        console.log(`downloading ${this.source.contentType} segment: ${url}`);
     }
 
     atLastSegment() {

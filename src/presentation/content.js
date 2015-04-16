@@ -39,9 +39,9 @@ class Content extends PlayerObject {
                 template.timescale, this
             );
 
-            console.log('updated', this.source.contentType,
-                        'interval', this.interval.id,
-                        'to use repeating segment', this.repeatSegment);
+            console.log(`updated ${this.source.contentType} ` +
+                        `interval ${this.interval.id} ` +
+                        `to use repeating segment`, this.repeatSegment);
             return;
         }
 
@@ -82,11 +82,12 @@ class Content extends PlayerObject {
             }
         }
 
-        console.log('updated', this.source.contentType,
-                    'interval', this.interval.id,
-                    'with', this.segments.length, 'segments',
-                    this.segments[0].start,
-                    this.segments[this.segments.length - 1].end);
+        console.log(`updated ${this.source.contentType} ` +
+                    `interval ${this.interval.id} ` +
+                    `with ${this.segments.length} segments ` +
+                    `${this.segments[0].start.toFixed(2)} - ` +
+                    this.segments[this.segments.length - 1].end.toFixed(2)
+        );
     }
 
     contentDerivedDuration() {

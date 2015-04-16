@@ -45,7 +45,7 @@ class Player {
         // for debugging - publicise all video events
         this.videoEventHandler = function(event) {
             if (player.options.showVideoEvents)
-                console.log('video element event:', event.type);
+                console.log(`video element event: ${event.type}`);
         }
 
         for (let eventType of VIDEO_EVENTS) {
@@ -190,7 +190,7 @@ class Player {
 
     set duration(newDuration) {
         this.mediaSource.duration = newDuration;
-        console.log('set video duration to', this.mediaSource.duration);
+        console.log(`set video duration to ${this.mediaSource.duration}`);
         this.emit('durationChange');
     }
 

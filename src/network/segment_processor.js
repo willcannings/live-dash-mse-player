@@ -95,13 +95,13 @@ class Segment extends PlayerObject {
     // ---------------------------
     error(xhr) {
         this.state = Segment.error;
-        console.log('error loading segment', this._url, xhr);
+        console.log(`error loading segment ${this._url}`, xhr);
         throw 'error loading segment';
     }
 
     timeout(xhr) {
         this.state = Segment.error;
-        console.log('timeout loading segment', this._url, xhr);
+        console.log(`timeout loading segment ${this._url}`, xhr);
         throw 'timeout loading segment';
     }
 

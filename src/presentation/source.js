@@ -54,9 +54,9 @@ class Source extends PlayerObject {
                 let filename = URI(segment.url()).filename();
                 let duration = segment.realEnd - segment.realStart;
                 let time = performance.now() - this.presentation.controller.timeBase;
-                console.log(time.toFixed(2),
-                            `loaded ${this.contentType}`,
-                            `segment ${filename}`,
+                console.log(`${time.toFixed(2)} ` +
+                            `loaded ${this.contentType} ` +
+                            `segment ${filename} ` +
                             `added ${duration.toFixed(2)}s`
                 );
 
@@ -87,7 +87,7 @@ class Source extends PlayerObject {
     }
 
     removeSegment(segment) {
-        console.log(`deleting ${segment.start.toFixed(2)} to`,
+        console.log(`deleting ${segment.start.toFixed(2)} to ` +
                     `${segment.end.toFixed(2)} in ${this.contentType} buffer`);
         this.buffer.remove(segment.start, segment.end);
     }
