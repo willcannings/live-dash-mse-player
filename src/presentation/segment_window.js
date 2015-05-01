@@ -68,8 +68,8 @@ class SegmentWindow extends PlayerObject {
             let minStart = rangeStart - timeshift;
 
             // if a suggested delay is provided, move back by that many seconds
-            if (manifest.suggestedPresentationDelay) {
-                rangeStart -= manifest.suggestedPresentationDelay;
+            if (this.presentation.hasSuggestedDelay) {
+                rangeStart -= this.presentation.suggestedDelay;
 
             // otherwise use the timeshift buffer to determine the start time
             // divide the timeshift in half as a heuristic so we're not too

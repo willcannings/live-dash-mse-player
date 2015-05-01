@@ -63,7 +63,7 @@ class Segment extends PlayerObject {
         let presentation = this.content.source.presentation;
 
         // all presentations, including static, may have an availability time
-        if (!presentation.hasAvailabilityStartTime())
+        if (!presentation.hasAvailabilityStartTime)
             return true;
 
         // live edge is 0 when current time == availability time. the segment

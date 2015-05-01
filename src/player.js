@@ -24,6 +24,7 @@ class Player {
 
             noTimeshift: false,             // true if live streams won't rewind
             ignoreAudio: false,             // skip audio source when true
+            overrideDelay: undefined,       // seconds; when !undefined, override suggestedPresentationDelay
 
             maxDownloadHistory: 100,        // max number of recent requests to cache
 

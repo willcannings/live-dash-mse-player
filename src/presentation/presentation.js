@@ -31,8 +31,18 @@ class Presentation extends PlayerObject {
         return now - available;
     }
 
-    hasAvailabilityStartTime() {
+    get hasAvailabilityStartTime() {
         return this.manifest.availabilityStartTime != undefined;
+    }
+
+    get hasSuggestedDelay() {
+        return this.controller.options.overrideDelay != undefined ||
+                this.manifest.suggestedPresentationDelay != 0;
+    }
+
+    get suggestedDelay() {
+        return this.controller.options.overrideDelay ||
+                this.manifest.suggestedPresentationDelay;
     }
 
     updateManifest(manifest) {
