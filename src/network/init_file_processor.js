@@ -3,7 +3,11 @@ class InitFile extends RequestProcessor {
         this.source = source;
 
         // generate init url from the initial representation
-        this.url = source.currentRepresentation.segmentTemplate.initialization;
+        let representation = source.currentRepresentation;
+        if (representation.segmentTemplate)
+            this.url = representation.segmentTemplate.initialization;
+        else
+            this.url = representation.segmentList.initialization.sourceURL;
 
         // this.url will be a relative url. absolutify it relative to the
         // manifest base url (either defined by BaseURL or by the manifest URL)

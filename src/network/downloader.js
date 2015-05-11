@@ -58,6 +58,10 @@ class Request {
         if (options.timeout)
             xhr.timeout = options.timeout * 1000;
 
+        // range requests
+        if (options.range)
+            xhr.setRequestHeader('Range', `bytes=${options.range}`);
+
 
         // track state and timings of the request. requestStart is timestamped
         // to the moment before xhr.send(), which is when a connection is
@@ -105,9 +109,9 @@ class Request {
             this.xhr = null;
         }
 
-        // http was successful, but only 200 responses are accepted
+        // http was successful, but only 200 || 206 responses are accepted
         xhr.onload = function() {
-            if (this.status == 200) {
+            if (this.status == 200 || (options.range && this.status == 206)) {
                 request.state = Request.success;
                 options.processor.success(xhr);
                 this.xhr = null;
@@ -202,11 +206,12 @@ class Downloader {
         );
     }
 
-    getMedia(url, processor) {
+    getMedia(url, range, processor) {
         this.truncateHistory();
         this.requestHistory.push(
             new Request().start({
                 url,
+                range,
                 processor,
                 responseType: 'arraybuffer'
             })

@@ -1,10 +1,12 @@
 class Segment extends PlayerObject {
-    constructor(duration, number, time, timescale, content) {
+    constructor(duration, number, time, timescale, content, url, range) {
         this.duration       = duration;
         this.number         = number;
         this.time           = time;
         this.timescale      = timescale;
         this.content        = content;
+        this.listURL        = url;
+        this.range          = range;
 
         this.state          = Segment.pending;
         this._url           = null;
@@ -47,9 +49,13 @@ class Segment extends PlayerObject {
         if (this._url)
             return this._url;
 
-        let template = this.content.currentRepresentation.segmentTemplate;
-        let number = this.number + template.startNumber;
-        let path = template.media.format(number, this.time);
+        if (this.listURL) {
+            var path = this.listURL;
+        } else {
+            let template = this.content.currentRepresentation.segmentTemplate;
+            let number = this.number + template.startNumber;
+            var path = template.media.format(number, this.time);
+        }
 
         let baseURL = this.content.source.presentation.manifest.base();
         let url = URI(path).absoluteTo(baseURL).toString();
