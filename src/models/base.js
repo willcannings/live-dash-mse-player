@@ -243,6 +243,19 @@ class Model {
         return maxObj;
     }
 
+    try(path) {
+        let components = path.split('.');
+        let obj = this;
+
+        for (let component of components) {
+            obj = obj[component];
+            if (obj == undefined)
+                return undefined;
+        }
+
+        return obj;
+    }
+
     // ancestors
     ancestor(type) {
         let obj = this.parent;

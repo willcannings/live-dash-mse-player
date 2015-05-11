@@ -74,6 +74,7 @@ export class Period extends Model {
             duration:   duration
         });
 
+        this.init(SegmentList);
         this.init(SegmentTemplate);
         this.initAll(AdaptationSet);
     }
@@ -123,6 +124,7 @@ export class AdaptationSet extends Model {
         this.index = AdaptationSet.nextIndex();
 
         this.initAll(ContentComponent);
+        this.init(SegmentList);
         this.init(SegmentTemplate);
         this.initAll(Representation);
     }
@@ -156,31 +158,36 @@ export class Representation extends Model {
             mediaStreamStructureId: str
         });
 
-        // TODO: SegmentBase, SegmentList
+        // TODO: SegmentBase
         this.initAll(SubRepresentation);
-        this.init(SegmentTemplate);
         this.init(BaseURL);
-
+        this.init(SegmentList);
+        this.init(SegmentTemplate);
         this.inherit(AdaptationSet, Object.keys(commonAttributes));
 
-        // fill in the representation's SegmentTemplate with a copy of the
-        // template in AdaptationSet or Period if it doesn't exist
-        if (!this.segmentTemplate) {
-            let defaultTemplate = null;
-            
-            let adaptationSet = this.ancestor(AdaptationSet);
-            if (adaptationSet && adaptationSet.segmentTemplate) {
-                defaultTemplate = adaptationSet.segmentTemplate;
-            } else {
-                let period = this.ancestor(Period);
-                if (period && period.segmentTemplate)
-                    defaultTemplate = period.segmentTemplate;
-            }
+        // inherit a template from the parent adaptation set or period if none
+        // was defined in the representation.
+        this.inherit(AdaptationSet, ['segmentTemplate']);
+        this.inherit(Period, ['segmentTemplate']);
 
-            if (!defaultTemplate)
-                throw 'Representation must currently have a SegmentTemplate or one must appear in ancestry';
-            this.segmentTemplate = new SegmentTemplate(defaultTemplate, this);
-        }
+        // copy the template if it was inherited. this resets the parent of the
+        // template to the representation allowing template strings to include
+        // representation ids and bandwidths etc.
+        if (this.segmentTemplate != undefined && this.segmentTemplate.parent != this)
+            this.segmentTemplate = new SegmentTemplate(this.segmentTemplate, this);
+
+        // repeat the same inheritance dance for segment lists
+        this.inherit(AdaptationSet, ['segmentList']);
+        this.inherit(Period, ['segmentList']);
+
+        // and perform a copy again to reset parent. this allows BaseURLs in
+        // an adaptation set to be used on lists inherited from the period.
+        if (this.segmentList != undefined && this.segmentList.parent != this)
+            this.segmentList = new SegmentList(this.segmentList, this);
+
+        // representations must have some segments
+        if (this.segmentTemplate == undefined && this.segmentList == undefined)
+            throw 'Representation must currently have a SegmentTemplate or SegmentList, or one must appear in ancestry';
     }
 
     get mseType() {
@@ -205,7 +212,7 @@ export class SubRepresentation extends Model {
 
 
 // --------------------------------------------------
-// segments
+// template segments
 // --------------------------------------------------
 export class SegmentTemplate extends Model {
     setup() {
@@ -302,5 +309,75 @@ export class S extends Model {
 
         if (this.r == undefined)
             this.r = 0;
+    }
+}
+
+
+// --------------------------------------------------
+// list segments
+// --------------------------------------------------
+export class SegmentList extends Model {
+    setup() {
+        this.attrs({
+            timescale:      integer,
+            duration:       integer
+        });
+
+        this.init(Initialization);
+        this.initAll(SegmentURL);
+
+        // inherit attributes from ancestors
+        let attrNames = Object.keys(this.attributeDefinitions);
+        this.inheritFrom(AdaptationSet, 'segmentList', attrNames);
+        this.inheritFrom(Period, 'segmentList', attrNames);
+
+        // inherit Initialization row from ancestor segment lists. start lookup
+        // assuming we're a child of a Representation, next ancestor with a
+        // SegmentList is an AdaptationSet. After that, Period.
+        if (this.initialization == undefined) {
+            let adaptationSet = this.ancestor(AdaptationSet);
+            if (adaptationSet)
+                this.initialization = adaptationSet.try('segmentList.initialization');
+
+            let period = this.ancestor(Period);
+            if (period && !this.initialization)
+                this.initialization = period.try('segmentList.initialization');
+        }
+    }
+}
+
+export class SegmentURL extends Model {
+    setup() {
+        this.attrs({
+            mediaRange:     str,
+            indexRange:     str,
+            media:          str,
+            index:          str
+        });
+
+        // media: inherit ancestor BaseURL when not preset
+        if (this.media == undefined) {
+            let obj = this.parent;
+            while (obj && !obj.baseURL)
+                obj = obj.parent;
+
+            if (obj) {
+                let manifest = this.ancestor(Manifest);
+                this.media = obj.baseURL.absoluteTo(manifest.url);
+            }
+        }
+
+        // index: inherit media, or ancestor BaseURL when not present
+        if (this.index == undefined)
+            this.index = this.media;
+    }
+}
+
+export class Initialization extends Model {
+    setup() {
+        this.attrs({
+            sourceURL:      str,
+            range:          integer
+        });
     }
 }
