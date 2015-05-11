@@ -217,8 +217,16 @@ class Player {
     // ---------------------------
     // states/events
     // ---------------------------
-    emit(eventType) {
-        let event = new Event(`player:${eventType}`);
+    emit(type) {
+        let eventType = `player:${type}`;
+
+        try {
+            var event = new Event(eventType);
+        } catch (ignore) {
+            var event = document.createEvent('Event');
+            event.initEvent(eventType, true, true);
+        }
+
         this.video.dispatchEvent(event);
     }
 
