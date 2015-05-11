@@ -241,7 +241,7 @@ class SegmentWindow extends PlayerObject {
         // cache the url, this locks it to the current representation
         let url = segment.url(true);
 
-        controller.downloader.getMedia(url, segment);
+        controller.downloader.getMedia(url, segment.range, segment);
         console.log(`downloading ${this.source.contentType} segment: ${url}`);
     }
 

@@ -100,6 +100,7 @@ class Source extends PlayerObject {
         let initFile = new InitFile(this);
         this.presentation.controller.downloader.getMedia(
             initFile.url,
+            undefined,
             initFile
         );
     }

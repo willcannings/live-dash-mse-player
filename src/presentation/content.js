@@ -29,6 +29,13 @@ class Content extends PlayerObject {
     }
 
     updateTimelineWith(representation) {
+        if (representation.segmentTemplate)
+            this.updateTimelineWithTemplate(representation)
+        else
+            this.updateTimelineWithList(representation)
+    }
+
+    updateTimelineWithTemplate(representation) {
         let template = representation.segmentTemplate;
         let timeline = template.segmentTimeline;
 
@@ -88,6 +95,36 @@ class Content extends PlayerObject {
                     `${this.segments[0].start.toFixed(2)} - ` +
                     this.segments[this.segments.length - 1].end.toFixed(2)
         );
+    }
+
+    updateTimelineWithList(representation) {
+        let list = representation.segmentList;
+        let timescale = list.timescale;
+        let duration = list.duration;
+        let number = 0;
+        let time = 0;
+
+        this.segments = [];
+
+        for (let segmentURL of list.segmentURLs) {
+            let segment = new Segment(
+                duration, number, time,
+                timescale, this, segmentURL.media,
+                segmentURL.mediaRange
+            );
+
+            this.segments.push(segment);
+            time += duration;
+            number += 1;
+        }
+
+        console.log(`updated ${this.source.contentType} ` +
+                    `interval ${this.interval.id} ` +
+                    `with ${this.segments.length} segments ` +
+                    `${this.segments[0].start.toFixed(2)} - ` +
+                    this.segments[this.segments.length - 1].end.toFixed(2)
+        );
+
     }
 
     contentDerivedDuration() {
