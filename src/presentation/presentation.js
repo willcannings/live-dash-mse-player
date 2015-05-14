@@ -97,6 +97,10 @@ class Presentation extends PlayerObject {
         return this.operationMode != Presentation.staticOperation &&
                 this.manifest.minimumUpdatePeriod != undefined;
     }
+
+    get hasKnownDuration() {
+        return this.manifest.static;
+    }
 };
 
 Presentation.enum('states', [

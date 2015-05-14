@@ -180,6 +180,12 @@ class SegmentWindow extends PlayerObject {
 
             // if this is the last segment in the queue...
             if (this.atLastSegment()) {
+                // sometimes there is a mismatch between a presentation's
+                // reported duration (mpd) and the duration specified in the
+                // movie header (init) - catch this state here
+                if (this.presentation.hasKnownDuration)
+                    return;
+
                 // the last segment may be the last segment available in the
                 // presentation. don't perform any processing in this case.
                 let duration = presentation.timeline.duration;
@@ -240,9 +246,12 @@ class SegmentWindow extends PlayerObject {
 
         // cache the url, this locks it to the current representation
         let url = segment.url(true);
-
         controller.downloader.getMedia(url, segment.range, segment);
-        console.log(`downloading ${this.source.contentType} segment: ${url}`);
+
+        if (segment.range)
+            console.log(`downloading ${this.source.contentType} segment: ${url} (${segment.range})`);
+        else
+            console.log(`downloading ${this.source.contentType} segment: ${url}`);
     }
 
     atLastSegment() {

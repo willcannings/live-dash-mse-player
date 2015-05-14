@@ -54,9 +54,10 @@ class Source extends PlayerObject {
                 let filename = URI(segment.url()).filename();
                 let duration = segment.realEnd - segment.realStart;
                 let time = performance.now() - this.presentation.controller.timeBase;
+                let range = segment.range ? `(${segment.range})` : '';
                 console.log(`${time.toFixed(2)} ` +
                             `loaded ${this.contentType} ` +
-                            `segment ${filename} ` +
+                            `segment ${filename} ${range}` +
                             `added ${duration.toFixed(2)}s`
                 );
 
@@ -174,9 +175,13 @@ class Source extends PlayerObject {
     }
 
     get bufferEnd() {
-        if (!this.buffer || this.buffer.buffered.length == 0)
+        try {
+            if (!this.buffer || this.buffer.buffered.length == 0)
+                return -1;
+            return this.buffer.buffered.end(this.buffer.buffered.length - 1);
+        } catch (ignore) {
             return -1;
-        return this.buffer.buffered.end(this.buffer.buffered.length - 1);
+        }
     }
 };
 
