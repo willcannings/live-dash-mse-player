@@ -40,7 +40,12 @@ class Request {
         return this.totalSize / this.duration();
     }
 
-    start(options) {
+    start(downloader, options) {
+        options.url = downloader.pickHost(options.url);
+        this.startRequest(options);
+    }
+
+    startRequest(options) {
         let xhr = new XMLHttpRequest();
         xhr.open('GET', options.url);
 
@@ -155,8 +160,46 @@ Request.error = 3;
 // --------------------------------------------------
 // download manager
 // --------------------------------------------------
+class Host {
+    constructor(host, controller) {
+        this.host = host;
+        this.failed = 0;
+        this.re_enable = null;
+        this.options = controller.options;
+    }
+
+    get online() {
+        // if the host has been taken offline and the offline duration has
+        // passed, re-enable the host for download
+        if (this.re_enable && this.re_enable <= performance.now()) {
+            this.re_enable = null;
+            this.failed = 0;
+        }
+
+        // the host is considered online as long as a maximum number of error
+        // requests hasn't been exceeded.
+        let maxFailed = this.options.maxHostFailedRequests;
+        return this.failed <= maxFailed;
+    }
+
+    failed() {
+        // hosts are taken offline when a maximum number of error requests has
+        // been reached, so each error is tracked on the host
+        let maxFailed = this.options.maxHostFailedRequests;
+        let offlineDuration = this.options.hostOfflineDuration;
+        this.failed += 1;
+
+        // when the max failed requests count is exceeded, the host is taken
+        // offline for a period of time to allow it to recover
+        if (this.failed > maxFailed)
+            this.re_enable = performance.now() + (offlineDuration * 1000);
+    }
+};
+
 class Downloader {
     constructor(controller) {
+        this.hosts = [];
+        this.nextHost = 0;
         this.controller = controller;
         this.requestHistory = [];
         this.maxHistoryLength = controller.player.options.maxDownloadHistory;
@@ -191,13 +234,42 @@ class Downloader {
             if (remaining <= 0)
                 break;
         }
+    }
 
+    hostAt(index) {
+        var host = this.hosts[index];
+        if (host.re_enable <= performance.now())
+            host.online = true;
+        return host;
+    }
+
+    pickHost(url) {
+        let numHosts = this.hosts.length;
+        let index = this.nextHost;
+        let host = this.hostAt(index);
+
+        // round robin requests between hosts. when a host is offline iterate
+        // through the list to find the next online host. if no hosts are
+        // online (the iteration reaches the same index as the start of the
+        // loop) trigger an error condition on the request.
+        while (!host.online) {
+            index = (index + 1) % numHosts;
+            if (index == this.nextHost)
+                return null;
+            host = this.hostAt(index);
+        }
+
+        // replace the host of the URL and update nextHost to point to the next
+        // host in the list so requests are round robin'd
+        url = URI(url).host(host.host);
+        this.nextHost = (index + 1) % numHosts;
+        return url.toString();
     }
 
     getMPD(url, processor) {
         this.truncateHistory();
         this.requestHistory.push(
-            new Request().start({
+            new Request().start(this, {
                 url,
                 processor,
                 mimeType: 'text/xml',
@@ -209,7 +281,7 @@ class Downloader {
     getMedia(url, range, processor) {
         this.truncateHistory();
         this.requestHistory.push(
-            new Request().start({
+            new Request().start(this, {
                 url,
                 range,
                 processor,

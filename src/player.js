@@ -27,6 +27,8 @@ class Player {
             overrideDelay: undefined,       // seconds; when !undefined, override suggestedPresentationDelay
 
             maxDownloadHistory: 100,        // max number of recent requests to cache
+            maxHostFailedRequests: 2,       // max number of failed requests to a host before it's taken offline
+            hostOfflineDuration: 60,        // seconds; when host is taken offline it won't receive requests for this duration
 
             chromeDOMFixInterval: 0         // seconds; when > 0 add DOM elements to fix Chrome bug
         }, opts);
