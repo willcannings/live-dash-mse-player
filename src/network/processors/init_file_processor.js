@@ -5,15 +5,15 @@ class InitFile extends RequestProcessor {
         // generate init url from the initial representation
         let representation = source.currentRepresentation;
         if (representation.segmentTemplate)
-            this.url = representation.segmentTemplate.initialization;
+            this.uri = representation.segmentTemplate.initialization;
         else
-            this.url = representation.segmentList.initialization.sourceURL;
+            this.uri = representation.segmentList.initialization.sourceURL;
 
-        // this.url will be a relative url. absolutify it relative to the
-        // manifest base url (either defined by BaseURL or by the manifest URL)
-        let baseURL = source.presentation.manifest.base();
-        this.url = URI(this.url).absoluteTo(baseURL).toString();
-        console.log(`initialising ${source.contentType} with ${this.url}`);
+        console.log(`initialising ${source.contentType} with ${this.uri}`);
+    }
+
+    get type() {
+        return RequestProcessor.init;
     }
 
     error(xhr) {

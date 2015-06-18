@@ -14,23 +14,28 @@ const VIDEO_EVENTS = [  'loadstart', 'emptied', 'canplay', 'canplaythrough',
 class Player {
     constructor(opts) {
         this.options = Object.assign({
-            pauseDetectInterval: 1,         // seconds
-            debugInterval: 2,               // seconds
-            showVideoEvents: true,
-
+            // manifest/mpd
             mpdTimeout: 30,                 // seconds
             mpdReloadDelay: 0.2,            // seconds
             mpdMaxReloadAttempts: 5,
 
+            // playback
             noTimeshift: false,             // true if live streams won't rewind
             ignoreAudio: false,             // skip audio source when true
             overrideDelay: undefined,       // seconds; when !undefined, override suggestedPresentationDelay
 
-            maxDownloadHistory: 100,        // max number of recent requests to cache
-            maxHostFailedRequests: 2,       // max number of failed requests to a host before it's taken offline
-            hostOfflineDuration: 60,        // seconds; when host is taken offline it won't receive requests for this duration
+            // network
+            downloadHistory: 100,           // max number of recent requests to cache
+            maxBaseFailedRequests: 2,       // max number of failed requests to a base before it's taken offline
+            baseOfflineDuration: 60,        // seconds; when base is taken offline it won't receive requests for this duration
+            overrideBaseURIs: [],           // list of base uris to balance requests betwen
+            baseFailureWindow: 60 * 60,     // seconds; window a failed request will affect a base. helps long running players.
 
-            chromeDOMFixInterval: 0         // seconds; when > 0 add DOM elements to fix Chrome bug
+            // workarounds/debugging
+            chromeDOMFixInterval: 0,        // seconds; when > 0 add DOM elements to fix Chrome bug
+            pauseDetectInterval: 1,         // seconds
+            debugInterval: 2,               // seconds
+            showVideoEvents: true
         }, opts);
 
         if (!this.options.url)
@@ -118,7 +123,8 @@ class Player {
             if (this.video.buffered.length > 0) {
                 let last = this.video.buffered.end(0);
                 let remaining = last - current;
-                let avgSpeed = this.controller.downloader.speedHistory().avg;
+                let downloader = this.controller.downloader;
+                let avgSpeed = downloader.speedHistory(RequestProcessor.media).avg;
                 avgSpeed *= 1000; // seconds
                 avgSpeed /= 1024; // kilobytes
 

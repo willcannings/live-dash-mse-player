@@ -4,6 +4,10 @@ class MPDProcessor extends RequestProcessor {
         this.reloadAttempts = 0;
     }
 
+    get type() {
+        return RequestProcessor.mpd;
+    }
+
     error(xhr) {
         console.log('error loading mpd', xhr);
         this.attemptReload();

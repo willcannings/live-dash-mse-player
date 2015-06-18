@@ -1,4 +1,4 @@
-class Segment extends PlayerObject {
+class Segment extends RequestProcessor {
     constructor(duration, number, time, timescale, content, url, range) {
         this.duration       = duration;
         this.number         = number;
@@ -10,6 +10,10 @@ class Segment extends PlayerObject {
 
         this.state          = Segment.pending;
         this._url           = null;
+    }
+
+    get type() {
+        return RequestProcessor.media;
     }
 
 
@@ -45,9 +49,9 @@ class Segment extends PlayerObject {
     // attributes
     // ---------------------------
     // lazily evaluate url so changes to currentRepresentation can apply
-    url(memoise = false) {
-        if (this._url)
-            return this._url;
+    uri(memoise = false) {
+        if (this._uri)
+            return this._uri;
 
         if (this.listURL) {
             var path = this.listURL;
@@ -57,12 +61,9 @@ class Segment extends PlayerObject {
             var path = template.media.format(number, this.time);
         }
 
-        let baseURL = this.content.source.presentation.manifest.base();
-        let url = URI(path).absoluteTo(baseURL).toString();
-
         if (memoise)
-            this._url = url;
-        return url;
+            this._uri = path;
+        return path;
     }
 
     available() {

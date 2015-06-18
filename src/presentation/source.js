@@ -51,7 +51,7 @@ class Source extends PlayerObject {
                 segment.data = null;
 
                 // debug log
-                let filename = URI(segment.url()).filename();
+                let filename = URI(segment.uri()).filename();
                 let duration = segment.realEnd - segment.realStart;
                 let time = performance.now() - this.presentation.controller.timeBase;
                 let range = segment.range ? `(${segment.range})` : '';
@@ -100,7 +100,7 @@ class Source extends PlayerObject {
     loadInitFile() {
         let initFile = new InitFile(this);
         this.presentation.controller.downloader.getMedia(
-            initFile.url,
+            initFile.uri,
             undefined,
             initFile
         );

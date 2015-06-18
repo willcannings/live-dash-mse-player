@@ -11,8 +11,8 @@
 ## Chrome
 
 * OS X: supported
-* Windows: untested
-* Linux: untested
+* Windows: supported
+* Linux: supported
 * Android: untested
 
 
@@ -32,14 +32,15 @@ To enable MSE:
 4. set media.mediasource.youtubeonly to false
 
 * OS X: supported
-* Windows: untested
+* Windows: supported
 * Linux: untested
 * Android: untested
 
 
 ## IE
 
-* all versions: untested
+* IE 11 (Windows 8): supported
+* Edge: supported
 
 
 ## DASH Documentation
