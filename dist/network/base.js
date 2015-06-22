@@ -71,7 +71,7 @@ var Base = (function () {
             get: function () {
                 // re-enable the base if it was offline and offlineSecs has passed
                 if (this.reenableAt && this.reenableAt <= performance.now()) {
-                    console.log("base " + this.inspect + " is back online");
+                    console.log("bringing base " + this.inspect + " back online");
                     this.failures.length = 0;
                     this.reenableAt = null;
                 }
@@ -165,13 +165,45 @@ var BaseManager = (function () {
                 }
             }
 
-            // start from a random base to avoid mutiple players switching
-            // between bases in sync
-            this.nextIndex = Math.floor(Math.random() * this.bases.length);
+            this.shuffleBases();
         }
     }
 
     _createClass(BaseManager, {
+        randomBetween: {
+            value: function randomBetween(minInclusive, maxExclusive) {
+                var rand = Math.random() * (maxExclusive - minInclusive);
+                return Math.floor(rand) + minInclusive;
+            }
+        },
+        shuffleBases: {
+
+            // when playing a dynamic manifest it's common for the reload interval of
+            // the manifest to match the segment duration. this means the network
+            // request pattern will be mpd, media, mpd, media and so on. if there are
+            // only two bases the round-robin load balancing will mean one base will
+            // always be used for mpd requests, and the other will always be used for
+            // media. when there's multiple players streaming the same manifest it's
+            // possible for them to synchronise and for a base to end up serving all
+            // media requests. to prevent this, after N shuffle seconds the bases list
+            // will be shuffled randomly.
+
+            value: function shuffleBases() {
+                console.log("shuffling bases");
+
+                // shuffle by swapping elements with another randomly selected element.
+                // start at the end of the array and swap with random(0..i-1), then
+                // swap i-2 with random(0..i-2) etc. (param 2 of randomBetween is excl)
+                for (var i = this.bases.length - 1; i > 0; i--) {
+                    var otherIndex = this.randomBetween(0, i);
+                    var temp = this.bases[i];
+                    this.bases[i] = this.bases[otherIndex];
+                    this.bases[otherIndex] = temp;
+                }
+
+                this.nextShuffle = performance.now() + this.controller.options.shuffleAfter * 1000;
+            }
+        },
         nextBase: {
             value: function nextBase(attempted) {
                 // nextBase will first be called the first time an mpd is loaded. since
@@ -179,19 +211,25 @@ var BaseManager = (function () {
                 // that are relative to a manifest's base url they can't be used yet.
                 // the IdentityBase is used to simply return the mpd's url in response
                 // to the mutate function.
-                // after the initial mpd is loaded a base url can be generated (either
+                if (this.controller.presentation.manifest == null) {
+                    return new IdentityBase();
+                } // after the initial mpd is loaded a base url can be generated (either
                 // from a BaseURL element, or the url of the mpd itself). if the
                 // overrideBaseTransforms option is empty a single Base object is used
                 // (with an empty transform list). round-robin requests are then
                 // performed on this single Base entry, or the entries already is bases.
-                if (this.controller.presentation.manifest == null) {
-                    return new IdentityBase();
-                }var numBases = this.bases.length;
+                var numBases = this.bases.length;
                 if (numBases == 0) {
                     var generated = new Base([], this.controller);
                     this.bases.push(generated);
                     return generated;
+                } else if (numBases == 1) {
+                    return this.bases[0];
                 }
+
+                // to prevent isolating request types to a single base, the bases list
+                // is randomly sorted every N seconds.
+                if (performance.now() >= this.nextShuffle) this.shuffleBases();
 
                 // round robin requests between bases. when a base is offline iterate
                 // through the list to find the next online base that hasn't been
