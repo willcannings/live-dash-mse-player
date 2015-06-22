@@ -107,11 +107,21 @@ class BaseManager {
         // shuffle by swapping elements with another randomly selected element.
         // start at the end of the array and swap with random(0..i-1), then
         // swap i-2 with random(0..i-2) etc. (param 2 of randomBetween is excl)
-        for (let i = this.bases.length - 1; i > 0; i--) {
+        for (let i = this.bases.length - 1; i > 1; i--) {
             let otherIndex = this.randomBetween(0, i);
             let temp = this.bases[i];
             this.bases[i] = this.bases[otherIndex];
             this.bases[otherIndex] = temp;
+        }
+
+        // for the final two bases, randomly determine whether they'll be
+        // swapped. this means a bases list of only two elements will only
+        // swap sometimes, which prevents multiple players synchronising
+        // their shuffles of the same bases list.
+        if (Math.random() >= 0.5) {
+            let temp = this.bases[0];
+            this.bases[0] = this.bases[1];
+            this.bases[1] = temp;
         }
 
         this.nextShuffle = performance.now() +

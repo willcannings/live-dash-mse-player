@@ -194,11 +194,21 @@ var BaseManager = (function () {
                 // shuffle by swapping elements with another randomly selected element.
                 // start at the end of the array and swap with random(0..i-1), then
                 // swap i-2 with random(0..i-2) etc. (param 2 of randomBetween is excl)
-                for (var i = this.bases.length - 1; i > 0; i--) {
+                for (var i = this.bases.length - 1; i > 1; i--) {
                     var otherIndex = this.randomBetween(0, i);
                     var temp = this.bases[i];
                     this.bases[i] = this.bases[otherIndex];
                     this.bases[otherIndex] = temp;
+                }
+
+                // for the final two bases, randomly determine whether they'll be
+                // swapped. this means a bases list of only two elements will only
+                // swap sometimes, which prevents multiple players synchronising
+                // their shuffles of the same bases list.
+                if (Math.random() >= 0.5) {
+                    var temp = this.bases[0];
+                    this.bases[0] = this.bases[1];
+                    this.bases[1] = temp;
                 }
 
                 this.nextShuffle = performance.now() + this.controller.options.shuffleAfter * 1000;
