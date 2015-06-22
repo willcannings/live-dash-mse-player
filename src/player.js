@@ -30,6 +30,7 @@ class Player {
             baseOfflineDuration: 60,        // seconds; when base is taken offline it won't receive requests for this duration
             overrideBaseTransforms: [],     // list of base uris to balance requests betwen
             baseFailureWindow: 60 * 60,     // seconds; window a failed request will affect a base. helps long running players.
+            shuffleAfter: 60,               // seconds; bases list will be shuffled every N seconds to prevent one base always responding to 1 request type
 
             // workarounds/debugging
             chromeDOMFixInterval: 0,        // seconds; when > 0 add DOM elements to fix Chrome bug
