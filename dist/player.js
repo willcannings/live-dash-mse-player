@@ -31,7 +31,7 @@ var Player = (function () {
             downloadHistory: 100, // max number of recent requests to cache
             maxBaseFailedRequests: 2, // max number of failed requests to a base before it's taken offline
             baseOfflineDuration: 60, // seconds; when base is taken offline it won't receive requests for this duration
-            overrideBaseURIs: [], // list of base uris to balance requests betwen
+            overrideBaseTransforms: [], // list of base uris to balance requests betwen
             baseFailureWindow: 60 * 60, // seconds; window a failed request will affect a base. helps long running players.
 
             // workarounds/debugging
