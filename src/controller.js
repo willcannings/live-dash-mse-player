@@ -97,9 +97,12 @@ class PresentationController extends PlayerObject {
         this.player.setDimensions(videoSource.width, videoSource.height);
         videoSource.createBuffer();
 
-        if (this.hasAudio) {
+        // We check here if there actually is an audio source
+        if (this.hasAudio && this.presentation.audioSource.currentRepresentation) {
             var audioSource = this.presentation.audioSource;
             audioSource.createBuffer();
+        } else {
+            this.hasAudio = false;
         }
 
         this.setState(PresentationController.sourceBuffersCreated);
