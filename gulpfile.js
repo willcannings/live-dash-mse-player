@@ -44,7 +44,16 @@ gulp.task('dev:styles', function () {
         'bower_components'
     ];
 
-    var child = spawn('compass', options, process.cwd());
+    // Support both old and new spawn interface
+    var child = null;
+    try {
+        child = spawn('compass', options, process.cwd());
+    } catch (e) {
+        child = spawn('compass', options, {
+            cwd: process.cwd()
+        });
+    }
+
     child.stdout.setEncoding('utf8');
     child.stdout.on('data', function (data) {
         console.log(data);
