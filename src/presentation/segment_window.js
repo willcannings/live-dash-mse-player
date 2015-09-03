@@ -299,17 +299,21 @@ class SegmentWindow extends PlayerObject {
             return;
 
         // remove the first segment to the segment before the current segment
-        let removed = this.segments.splice(0, this.playIndex - 1);
-        let count = removed.length;
+        if (this.source.state === Source.initialised) {
+            let removed = this.segments.splice(0, this.playIndex - 1);
+            let count = removed.length;
 
-        // update the indexes now segments have been removed
-        this.playIndex -= count;
-        this.loadIndex -= count;
+            // update the indexes now segments have been removed
+            this.playIndex -= count;
+            this.loadIndex -= count;
+            if (this.loadIndex < 0)
+                this.loadIndex = 0;
 
-        // remove each segment from the source's buffer. do this one by one to
-        // handle non contiguous segments (rather than first.start - last.end)
-        console.log(`truncating ${count} ${this.source.contentType} segments`);
-        for (let segment of removed)
-            this.source.removeSegment(segment);
+            // remove each segment from the source's buffer. do this one by one to
+            // handle non contiguous segments (rather than first.start - last.end)
+            console.log(`truncating ${count} ${this.source.contentType} segments`);
+            for (let segment of removed)
+                this.source.removeSegment(segment);
+        }
     }
 };
