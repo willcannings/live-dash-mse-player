@@ -191,9 +191,14 @@ var SegmentWindow = (function (_PlayerObject) {
             value: function downloadNextSegment() {
                 // ignore the call if fired before any segments have been added to the
                 // segment download queue
-                if (this.loadIndex == undefined) {
+                if (this.loadIndex === undefined) {
                     return;
-                }var presentation = this.presentation;
+                }if (this.segments.length === 0) {
+                    console.warn("no segments available for download");
+                    return;
+                }
+
+                var presentation = this.presentation;
                 var controller = presentation.controller;
                 var liveEdge = presentation.liveEdge();
 
@@ -312,37 +317,40 @@ var SegmentWindow = (function (_PlayerObject) {
                 if (this.playIndex == undefined || this.playIndex < 2) {
                     return;
                 } // remove the first segment to the segment before the current segment
-                var removed = this.segments.splice(0, this.playIndex - 1);
-                var count = removed.length;
+                if (this.source.state === Source.initialised) {
+                    var removed = this.segments.splice(0, this.playIndex - 1);
+                    var count = removed.length;
 
-                // update the indexes now segments have been removed
-                this.playIndex -= count;
-                this.loadIndex -= count;
+                    // update the indexes now segments have been removed
+                    this.playIndex -= count;
+                    this.loadIndex -= count;
+                    if (this.loadIndex < 0) this.loadIndex = 0;
 
-                // remove each segment from the source's buffer. do this one by one to
-                // handle non contiguous segments (rather than first.start - last.end)
-                console.log("truncating " + count + " " + this.source.contentType + " segments");
-                var _iteratorNormalCompletion = true;
-                var _didIteratorError = false;
-                var _iteratorError = undefined;
+                    // remove each segment from the source's buffer. do this one by one to
+                    // handle non contiguous segments (rather than first.start - last.end)
+                    console.log("truncating " + count + " " + this.source.contentType + " segments");
+                    var _iteratorNormalCompletion = true;
+                    var _didIteratorError = false;
+                    var _iteratorError = undefined;
 
-                try {
-                    for (var _iterator = removed[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                        var segment = _step.value;
-
-                        this.source.removeSegment(segment);
-                    }
-                } catch (err) {
-                    _didIteratorError = true;
-                    _iteratorError = err;
-                } finally {
                     try {
-                        if (!_iteratorNormalCompletion && _iterator["return"]) {
-                            _iterator["return"]();
+                        for (var _iterator = removed[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                            var segment = _step.value;
+
+                            this.source.removeSegment(segment);
                         }
+                    } catch (err) {
+                        _didIteratorError = true;
+                        _iteratorError = err;
                     } finally {
-                        if (_didIteratorError) {
-                            throw _iteratorError;
+                        try {
+                            if (!_iteratorNormalCompletion && _iterator["return"]) {
+                                _iterator["return"]();
+                            }
+                        } finally {
+                            if (_didIteratorError) {
+                                throw _iteratorError;
+                            }
                         }
                     }
                 }

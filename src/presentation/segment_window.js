@@ -162,8 +162,13 @@ class SegmentWindow extends PlayerObject {
     downloadNextSegment() {
         // ignore the call if fired before any segments have been added to the
         // segment download queue
-        if (this.loadIndex == undefined)
+        if (this.loadIndex === undefined)
             return;
+
+        if (this.segments.length === 0) {
+            console.warn('no segments available for download');
+            return;
+        }
 
         let presentation = this.presentation;
         let controller = presentation.controller;

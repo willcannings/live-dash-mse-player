@@ -21,8 +21,8 @@ var Source = (function (_PlayerObject) {
         this.buffer = null;
 
         // buffer data queue
-        this.appending = false;
-        this.appendQueue = [];
+        this.updating = false;
+        this.updateQueue = [];
 
         // segments queued for download
         this.queuedSegments = [];
@@ -60,50 +60,81 @@ var Source = (function (_PlayerObject) {
                 this.state = Source.bufferCreated;
 
                 this.buffer.addEventListener("update", function () {
-                    // segments are added through the appendQueue
-                    if (_this.appendQueue.length > 0) {
-                        // determine the real end time of the segment
-                        var segment = _this.appendQueue[0];
-                        segment.realEnd = _this.bufferEnd;
-                        segment.data = null;
+                    // segments are added/removed through the updateQueue
+                    if (_this.updateQueue.length > 0) {
+                        // remove the item from the queue
+                        var item = _this.updateQueue[0];
 
-                        // debug log
-                        var filename = URI(segment.uri()).filename();
-                        var duration = segment.realEnd - segment.realStart;
-                        var time = performance.now() - _this.presentation.controller.timeBase;
-                        var range = segment.range ? "(" + segment.range + ")" : "";
-                        console.log("" + time.toFixed(2) + " " + ("loaded " + _this.contentType + " ") + ("segment " + filename + " " + range) + ("added " + duration.toFixed(2) + "s"));
+                        // remove it from the queue
+                        _this.updateQueue.splice(0, 1);
+                        _this.updating = false;
 
-                        // remove it from the queue - we're done appending it
-                        _this.appendQueue.splice(0, 1);
-                        _this.appending = false;
+                        // perform some post processing on appended segments - clear
+                        // unused memory and assign their end time
+                        if (item.op == "append") {
+                            // determine the real end time of the segment
+                            var segment = item.segment;
+                            segment.realEnd = _this.bufferEnd;
+                            segment.data = null;
+
+                            // debug log
+                            var filename = URI(segment.uri()).filename();
+                            var duration = segment.realEnd - segment.realStart;
+                            var time = performance.now() - _this.presentation.controller.timeBase;
+                            var range = segment.range ? "(" + segment.range + ")" : "";
+                            console.log("" + time.toFixed(2) + " " + ("loaded " + _this.contentType + " ") + ("segment " + filename + " " + range) + ("added " + duration.toFixed(2) + "s"));
+                        }
 
                         // init files are added directly to the buffer
                     } else {
                         _this.presentation.controller.sourceInitialised();
                     }
 
-                    if (_this.appendQueue.length > 0) _this._appendNextSegment();
+                    if (_this.updateQueue.length > 0) _this.processUpdate();
                 });
             }
         },
+        appendUpdate: {
+            value: function appendUpdate(item) {
+                this.updateQueue.push(item);
+                if (!this.updating) this.processUpdate();
+            }
+        },
+        processUpdate: {
+            value: function processUpdate() {
+                this.updating = true;
+                var item = this.updateQueue[0];
+                var segment = item.segment;
+                if (item.op == "append") this._appendNextSegment(segment);else this._removeSegment(segment);
+            }
+        },
         _appendNextSegment: {
-            value: function _appendNextSegment() {
-                var segment = this.appendQueue[0];
+            value: function _appendNextSegment(segment) {
                 segment.realStart = this.bufferEnd;
+                if (segment.realStart == -1) console.error("segment realStart is set to -1");
                 this.buffer.appendBuffer(new Uint8Array(segment.data));
             }
         },
         appendSegment: {
             value: function appendSegment(segment) {
-                this.appendQueue.push(segment);
-                if (!this.appending) this._appendNextSegment();
+                this.appendUpdate({
+                    op: "append",
+                    segment: segment
+                });
+            }
+        },
+        _removeSegment: {
+            value: function _removeSegment(segment) {
+                console.log("deleting " + segment.start.toFixed(2) + " to " + ("" + segment.end.toFixed(2) + " in " + this.contentType + " buffer"));
+                this.buffer.remove(segment.start, segment.end);
             }
         },
         removeSegment: {
             value: function removeSegment(segment) {
-                console.log("deleting " + segment.start.toFixed(2) + " to " + ("" + segment.end.toFixed(2) + " in " + this.contentType + " buffer"));
-                this.buffer.remove(segment.start, segment.end);
+                this.appendUpdate({
+                    op: "remove",
+                    segment: segment
+                });
             }
         },
         appendInitFile: {
@@ -201,7 +232,7 @@ var Source = (function (_PlayerObject) {
         bufferEnd: {
             get: function () {
                 try {
-                    if (!this.buffer || this.buffer.buffered.length == 0) return -1;
+                    if (!this.buffer || this.buffer.buffered.length == 0) return 0;
                     return this.buffer.buffered.end(this.buffer.buffered.length - 1);
                 } catch (ignore) {
                     return -1;

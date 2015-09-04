@@ -81,6 +81,8 @@ class Player {
                     console.error(
                         `timeupdate not triggered for ${interval}s, playback stopped?`
                     );
+                    if (player.options.pauseDetectCallback)
+                        player.options.pauseDetectCallback();
                 }, interval * 1000);
             }
         );

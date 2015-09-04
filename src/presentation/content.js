@@ -89,12 +89,19 @@ class Content extends PlayerObject {
             }
         }
 
-        console.log(`updated ${this.source.contentType} ` +
-                    `interval ${this.interval.id} ` +
-                    `with ${this.segments.length} segments ` +
-                    `${this.segments[0].start.toFixed(2)} - ` +
-                    this.segments[this.segments.length - 1].end.toFixed(2)
-        );
+        if (this.segments.length > 0) {
+            console.log(`updated ${this.source.contentType} ` +
+                        `interval ${this.interval.id} ` +
+                        `with ${this.segments.length} segments ` +
+                        `${this.segments[0].start.toFixed(2)} - ` +
+                        this.segments[this.segments.length - 1].end.toFixed(2)
+            );
+        } else {
+            console.warn(`updated ${this.source.contentType} ` +
+                        `interval ${this.interval.id} ` +
+                        `with ${this.segments.length} segments`
+            );
+        }
     }
 
     updateTimelineWithList(representation) {

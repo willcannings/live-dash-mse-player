@@ -96,6 +96,7 @@ var Player = (function () {
                 // pause and end states validly stop playback
                 if (player.video.paused || player.video.ended) return;
                 console.error("timeupdate not triggered for " + interval + "s, playback stopped?");
+                if (player.options.pauseDetectCallback) player.options.pauseDetectCallback();
             }, interval * 1000);
         });
 
